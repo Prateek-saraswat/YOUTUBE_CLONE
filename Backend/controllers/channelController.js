@@ -61,3 +61,30 @@ export const getChannelById = async (req, res) => {
     }
 }
 
+export const updateChannel = async (req , res)=> {
+
+   try{
+     const {id} = req.params
+
+    const channel = await Channel.findById(id)
+
+    if(!channel){
+        return res.status(404).json({ message: "Channel not found" }) 
+    }
+
+    if(channel.owner.toString() !== req.user._id.toString()){
+        return res.status(403).json({message : "Not authorized"})
+    }
+    const { channelName, description, channelBanner } = req.body
+
+    const updatedChannel = await Channel.findByIdAndUpdate(
+            id,
+            { channelName, description, channelBanner },
+            { new: true }
+        )
+
+        res.status(200).json({ message: "Channel updated", channel: updatedChannel })
+   }catch(error){
+    res.status(500).json({ message: error.message })
+   }
+}
