@@ -20,7 +20,6 @@ const channelSchema = new mongoose.Schema({
 
     },
     channelBanner:{
-
         type:String,
         default:""
 
