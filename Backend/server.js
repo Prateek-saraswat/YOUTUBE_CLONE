@@ -3,6 +3,7 @@ import dotenv from "dotenv";
 dotenv.config();
 import connectDB from "./config/db.js";
 import authRouter from "./routes/authRoutes.js";
+import channelRoute from "./routes/channelRoutes.js";
 import cors from "cors"
 
 
@@ -14,6 +15,7 @@ app.use(cors())
 connectDB(MONGO_URI);
 
 app.use('/api/auth' , authRouter)
+app.use('/api/channels' , channelRoute)
 
 app.get("/", (req, res) => {
   return res.status(200).json({ success: true, status: "Active : healthy" });
