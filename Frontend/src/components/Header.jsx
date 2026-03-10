@@ -138,10 +138,12 @@ const Header = ({ onToggleSidebar }) => {
   const [searchQuery,    setSearchQuery]    = useState("");
   const [showDropdown,   setShowDropdown]   = useState(false);
   const [showNoChannel,  setShowNoChannel]  = useState(false);
+  const [showMobileSearch, setShowMobileSearch] = useState(false);
 
   const handleSearch = (e) => {
     e.preventDefault();
     navigate(`/?search=${encodeURIComponent(searchQuery)}`);
+    setShowMobileSearch(false);
   };
 
   const handleSignOut = () => {
@@ -161,10 +163,42 @@ const Header = ({ onToggleSidebar }) => {
 
   return (
     <>
-      <header className="fixed top-0 left-0 right-0 h-14 bg-white flex items-center px-4 gap-2 border-b border-gray-200 z-50 text-black">
+      <header className="fixed top-0 left-0 right-0 h-14 bg-white flex items-center px-2 sm:px-4 gap-1 sm:gap-2 border-b border-gray-200 z-50 text-black">
+
+        {showMobileSearch && (
+          <div className="absolute inset-0 flex items-center gap-2 bg-white px-2 sm:hidden">
+            <button
+              type="button"
+              onClick={() => setShowMobileSearch(false)}
+              className="p-2 rounded-full hover:bg-gray-100 cursor-pointer text-gray-700"
+              aria-label="Close search"
+            >
+              <FiX size={20} />
+            </button>
+            <form onSubmit={handleSearch} className="flex flex-1 items-center min-w-0">
+              <div className="flex flex-1 items-center border border-gray-300 rounded-l-full px-3 py-[7px] bg-white focus-within:border-blue-400 min-w-0">
+                <input
+                  type="text"
+                  placeholder="Search"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="flex-1 min-w-0 bg-transparent text-sm text-black focus:outline-none placeholder-gray-500"
+                  autoFocus
+                />
+              </div>
+              <button
+                type="submit"
+                className="flex items-center justify-center px-4 h-[38px] bg-gray-100 border border-l-0 border-gray-300 rounded-r-full hover:bg-gray-200 cursor-pointer text-gray-600"
+                aria-label="Search"
+              >
+                <FiSearch size={18} />
+              </button>
+            </form>
+          </div>
+        )}
 
         {/* LEFT */}
-        <div className="flex items-center gap-3 flex-shrink-0">
+        <div className={`flex items-center gap-2 sm:gap-3 flex-shrink-0 ${showMobileSearch ? "sm:flex hidden" : ""}`}>
           <button
             onClick={onToggleSidebar}
             className="p-2 rounded-full hover:bg-gray-100 cursor-pointer text-gray-700"
@@ -175,12 +209,12 @@ const Header = ({ onToggleSidebar }) => {
 
           <Link to="/" className="flex items-center" aria-label="YouTube Home">
             <YoutubeSVGLogo />
-            <sup className="text-[10px] font-semibold text-gray-600 -mt-3 ml-0.5">IN</sup>
+            <sup className="hidden sm:block text-[10px] font-semibold text-gray-600 -mt-3 ml-0.5">IN</sup>
           </Link>
         </div>
 
         {/* CENTER — Search */}
-        <div className="flex flex-1 items-center justify-center px-2 sm:px-8 min-w-0">
+        <div className={`hidden sm:flex flex-1 items-center justify-center px-2 sm:px-4 lg:px-8 min-w-0 ${showMobileSearch ? "sm:flex hidden" : ""}`}>
           <form onSubmit={handleSearch} className="flex flex-1 max-w-[600px] items-center">
             <div className="flex flex-1 items-center border border-gray-300 rounded-l-full px-4 py-[7px] bg-white focus-within:border-blue-400">
               <input
@@ -209,23 +243,41 @@ const Header = ({ onToggleSidebar }) => {
         </div>
 
         {/* RIGHT */}
-        <div className="relative flex items-center gap-1 flex-shrink-0">
+        <div className={`relative flex items-center gap-0.5 sm:gap-1 flex-shrink-0 ml-auto ${showMobileSearch ? "sm:flex hidden" : ""}`}>
           {auth ? (
             <>
+              <button
+                type="button"
+                onClick={() => setShowMobileSearch(true)}
+                className="sm:hidden flex items-center justify-center w-9 h-9 rounded-full hover:bg-gray-100 cursor-pointer text-gray-700"
+                aria-label="Open search"
+              >
+                <FiSearch size={18} />
+              </button>
+
               {/* Create button */}
               <Link
                 to={auth.user.channel ? `/channel/${auth.user.channel}/upload` : "#"}
                 onClick={handleCreateClick}
-                className="hidden sm:flex items-center gap-1.5 px-4 py-[7px] rounded-full bg-gray-100 hover:bg-gray-200 text-gray-800 text-sm font-medium whitespace-nowrap"
+                className="hidden md:flex items-center gap-1.5 px-4 py-[7px] rounded-full bg-gray-100 hover:bg-gray-200 text-gray-800 text-sm font-medium whitespace-nowrap"
               >
                 <HiOutlinePlus size={18} strokeWidth={2.5} />
                 <span>Create</span>
               </Link>
 
+              <Link
+                to={auth.user.channel ? `/channel/${auth.user.channel}/upload` : "#"}
+                onClick={handleCreateClick}
+                className="hidden sm:flex md:hidden items-center justify-center w-9 h-9 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-800"
+                aria-label="Create"
+              >
+                <HiOutlinePlus size={18} strokeWidth={2.5} />
+              </Link>
+
               {/* Bell */}
               <button
                 type="button"
-                className="relative flex items-center justify-center w-10 h-10 rounded-full hover:bg-gray-100 cursor-pointer text-gray-700"
+                className="relative hidden sm:flex items-center justify-center w-10 h-10 rounded-full hover:bg-gray-100 cursor-pointer text-gray-700"
                 aria-label="Notifications"
               >
                 <AiOutlineBell size={24} />
@@ -267,13 +319,23 @@ const Header = ({ onToggleSidebar }) => {
               )}
             </>
           ) : (
-            <Link
-              to="/login"
-              className="flex items-center justify-center gap-1 px-2 sm:px-4 py-1.5 border border-blue-500 text-blue-500 rounded-full text-sm hover:bg-blue-50 whitespace-nowrap"
-            >
-              <FiUser />
-              <span className="hidden sm:block">Sign in</span>
-            </Link>
+            <>
+              <button
+                type="button"
+                onClick={() => setShowMobileSearch(true)}
+                className="sm:hidden flex items-center justify-center w-9 h-9 rounded-full hover:bg-gray-100 cursor-pointer text-gray-700"
+                aria-label="Open search"
+              >
+                <FiSearch size={18} />
+              </button>
+              <Link
+                to="/login"
+                className="flex items-center justify-center gap-1 px-2 sm:px-4 py-1.5 border border-blue-500 text-blue-500 rounded-full text-sm hover:bg-blue-50 whitespace-nowrap"
+              >
+                <FiUser />
+                <span className="hidden sm:block">Sign in</span>
+              </Link>
+            </>
           )}
         </div>
       </header>
