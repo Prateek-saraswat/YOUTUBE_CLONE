@@ -1,6 +1,6 @@
 import express from "express"
-import protect from "../middlewares/authMiddleware"
-import { deleteVideo, dislikeVideo, getAllVideos, getVideoById, likeVideo, updateVideo, uploadVideo } from "../controllers/videoController"
+import protect from "../middlewares/authMiddleware.js"
+import { deleteVideo, dislikeVideo, getAllVideos, getVideoById, likeVideo, updateVideo, uploadVideo } from "../controllers/videoController.js"
 
 const videoRouter = express.Router()
 
