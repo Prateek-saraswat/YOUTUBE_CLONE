@@ -41,3 +41,32 @@ export const uploadVideo = async (req, res) => {
         res.status(500).json({ message: error.message })
     }
 }
+
+export const getAllVideos = async (req, res) => {
+    try {
+        const { search, category } = req.query
+
+        // query object banao
+        let query = {}
+
+        // search by title
+        if (search) {
+            query.title = { $regex: search, $options: 'i' }  // case insensitive
+        }
+
+        // filter by category
+        if (category) {
+            query.category = category
+        }
+
+        const videos = await Video.find(query)
+            .populate('channel', 'channelName')
+            .populate('uploader', 'username avatar')
+            .sort({ createdAt: -1 })  // latest pehle
+
+        res.status(200).json(videos)
+
+    } catch (error) {
+        res.status(500).json({ message: error.message })
+    }
+}
