@@ -105,7 +105,7 @@ const VideoCard = ({ video, channelContext }) => {
         )}
       </div>
 
-      {/* ── METADATA ROW — avatar | text | ⋮ ── */}
+      {/*  METADATA ROW — avatar | text | ⋮  */}
       <div className="flex flex-row items-start pt-3 gap-3 w-full relative">
 
         {/* Channel Avatar — 36×36, fixed, never shrinks */}

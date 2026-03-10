@@ -13,11 +13,16 @@ const ChannelPage = lazy(() => import("./pages/ChannelPage"));
 const CreateEditVideo = lazy(() => import("./pages/CreateEditVideo"));
 
 function App() {
+  // Get current route location
   const location = useLocation();
+   // Sidebar state (open/close)
+  // Default: open on large screens
   const [sidebarOpen, setSidebarOpen] = useState(window.innerWidth >= 1024);
+  // Check if the current page is login or register page
   const isAuthPage = location.pathname === "/login" || location.pathname === "/register";
 
   useEffect(() => {
+     // Handle responsive sidebar behavior on window resize
     const handleResize = () => {
       if (window.innerWidth < 1024) {
         setSidebarOpen(false);
@@ -25,7 +30,7 @@ function App() {
         setSidebarOpen(true);
       }
     };
-
+   // Add resize event listener
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
   }, []);
@@ -35,13 +40,17 @@ function App() {
   };
 
   return (
+     // Main application container
     <div className="flex flex-col min-h-screen bg-white text-white">
+      {/* Hide Header on login/register pages */}
       {!isAuthPage && <Header onToggleSidebar={toggleSidebar} />}
 
       {isAuthPage ? (
         <main className="flex-1 min-w-0">
+           {/* Suspense shows loading fallback while lazy components load */}
           <Suspense fallback={<div className="text-center mt-10 text-black">Loading...</div>}>
             <Routes>
+                {/* Application Routes */}
               <Route path="/" element={<Home />} />
               <Route path="/login" element={<Login />} />
               <Route path="/register" element={<Register />} />

@@ -11,7 +11,7 @@ const CATEGORIES = [
   "News", "Entertainment", "Science & Tech", "Comedy",
 ];
 
-// ── Reusable field wrapper ─────────────────────────────────────────────────
+//  Reusable field wrapper 
 const Field = ({ label, required, hint, children }) => (
   <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
     <label

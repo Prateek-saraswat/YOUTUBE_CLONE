@@ -82,7 +82,7 @@ const Sidebar = ({ isOpen }) => {
             // hidden on mobile, mini sidebar on desktop
           }`}
       >
-        {/* ── Render each section ── */}
+        {/*  Render each section */}
         {sidebarSections.map((section, sIdx) => (
           <div key={sIdx}>
 
@@ -106,7 +106,7 @@ const Sidebar = ({ isOpen }) => {
                 !location.search;
 
               return isOpen ? (
-                /* ── EXPANDED MODE: icon + label in a row ── */
+                /*  EXPANDED MODE: icon + label in a row  */
                 <Link
                   key={iIdx}
                   to={item.path || "#"}

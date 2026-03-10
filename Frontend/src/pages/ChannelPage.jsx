@@ -8,7 +8,7 @@ import { HiDotsVertical } from "react-icons/hi";
 import { useAuth } from "../context/authContext.jsx";
 import Swal from "sweetalert2";
 
-// ── Helpers ────────────────────────────────────────────────────────────────
+// ── Helpers for subsciber formatiing
 const formatSubs = (n) => {
   if (!n) return "0";
   if (n >= 1_000_000) return (n / 1_000_000).toFixed(2).replace(/\.?0+$/, "") + "M";
@@ -16,10 +16,10 @@ const formatSubs = (n) => {
   return n.toString();
 };
 
-// ── Tabs ───────────────────────────────────────────────────────────────────
+//  Tabs
 const TABS = ["Home", "Videos", "Playlists", "About"];
 
-// ── Input field used in both forms ────────────────────────────────────────
+//  Input field used in both forms 
 const Field = ({ label, value, onChange, type = "text", rows }) => (
   <div className="flex flex-col gap-1">
     <label
@@ -71,7 +71,7 @@ const Field = ({ label, value, onChange, type = "text", rows }) => (
   </div>
 );
 
-// ── YT-style pill button ───────────────────────────────────────────────────
+//  YT-style pill button 
 const Pill = ({ children, onClick, primary = false, danger = false, small = false, type = "button" }) => {
   const bg = primary ? "#065fd4" : danger ? "#f2f2f2" : "#f2f2f2";
   const color = primary ? "#fff" : danger ? "#cc0000" : "#0f0f0f";
@@ -110,7 +110,7 @@ const Pill = ({ children, onClick, primary = false, danger = false, small = fals
   );
 };
 
-// ── Modal wrapper ──────────────────────────────────────────────────────────
+//  Modal wrapper 
 const Modal = ({ title, onClose, children }) => (
   <div
     style={{
@@ -150,9 +150,8 @@ const Modal = ({ title, onClose, children }) => (
   </div>
 );
 
-// ══════════════════════════════════════════════════════════════════════════
 //  MAIN PAGE
-// ══════════════════════════════════════════════════════════════════════════
+
 const ChannelPage = () => {
   const { id }              = useParams();
   const navigate            = useNavigate();
@@ -247,7 +246,7 @@ const ChannelPage = () => {
     }
   };
 
-  // ── Loading ──
+  //  Loading 
   if (loading) {
     return (
       <div className="flex justify-center items-center h-60">
@@ -256,7 +255,7 @@ const ChannelPage = () => {
     );
   }
 
-  // ── Create channel form ──
+  //  Create channel form 
   if (showCreateForm || id === "create") {
     return (
       <div
