@@ -1,35 +1,65 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+import { useState, useEffect, Suspense, lazy } from "react";
+import Header from "./components/Header";
+import Sidebar from "./components/Sidebar";
+import { Route, Routes } from "react-router-dom";
+import ErrorPage from "./pages/ErrorPage";
+
+// Lazy imports
+const Register = lazy(() => import("./pages/Register"));
+const Login = lazy(() => import("./pages/Login"));
+const Home = lazy(() => import("./pages/Home"));
+const VideoPlayer = lazy(() => import("./pages/VideoPlayer"));
+const ChannelPage = lazy(() => import("./pages/ChannelPage"));
+const CreateEditVideo = lazy(() => import("./pages/CreateEditVideo"));
 
 function App() {
-  const [count, setCount] = useState(0)
+  const [sidebarOpen, setSidebarOpen] = useState(window.innerWidth >= 1024);
+
+  useEffect(() => {
+    const handleResize = () => {
+      if (window.innerWidth < 1024) {
+        setSidebarOpen(false);
+      } else {
+        setSidebarOpen(true);
+      }
+    };
+
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
+  const toggleSidebar = () => {
+    setSidebarOpen((prev) => !prev);
+  };
 
   return (
-    <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
+    <div className="flex flex-col min-h-screen bg-white text-white">
+      <Header onToggleSidebar={toggleSidebar} />
+
+      <div className="flex pt-14">
+        <Sidebar isOpen={sidebarOpen} />
+
+        <main
+          className={`flex-1 p-4 transition-all duration-300 min-w-0
+           ${sidebarOpen ? "lg:ml-60" : "lg:ml-16"}`}
+        >
+          <Suspense fallback={<div className="text-center mt-10">Loading...</div>}>
+            <Routes>
+              <Route path="/" element={<Home />} />
+              <Route path="/login" element={<Login />} />
+              <Route path="/register" element={<Register />} />
+              <Route path="/video/:id" element={<VideoPlayer />} />
+              <Route path="/channel/:id" element={<ChannelPage />} />
+              <Route path="/channel/:channelId/upload" element={<CreateEditVideo />} />
+              <Route path="/channel/:channelId/edit/:videoId" element={<CreateEditVideo />} />
+              <Route path="*" element={<ErrorPage />} />
+
+            </Routes>
+          </Suspense>
+        </main>
       </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.jsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
-  )
+    </div>
+  );
 }
 
-export default App
+export default App;
