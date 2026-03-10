@@ -4,7 +4,7 @@ import Video from '../models/Video.js'
 // 1. Add Comment
 export const addComment = async (req, res) => {
     try {
-        const { id } = req.params  // videoId
+        const { videoId } = req.params  // videoId
         const { text } = req.body
 
         // validation
@@ -13,7 +13,7 @@ export const addComment = async (req, res) => {
         }
 
         // video exists check
-        const video = await Video.findById(id)
+        const video = await Video.findById(videoId)
         if (!video) {
             return res.status(404).json({ message: "Video not found" })
         }
@@ -22,7 +22,7 @@ export const addComment = async (req, res) => {
         const newComment = await Comment.create({
             text,
             user: req.user._id,
-            video: id
+            video: videoId
         })
 
         res.status(201).json({
@@ -38,9 +38,9 @@ export const addComment = async (req, res) => {
 // 2. Get Comments
 export const getComments = async (req, res) => {
     try {
-        const { id } = req.params  // videoId
+        const { videoId } = req.params  // videoId
 
-        const comments = await Comment.find({ video: id })
+        const comments = await Comment.find({ video: videoId })
             .populate('user', 'username avatar')
             .sort({ createdAt: -1 })  // latest pehle
 

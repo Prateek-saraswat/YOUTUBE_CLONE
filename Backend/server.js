@@ -6,6 +6,7 @@ import authRouter from "./routes/authRoutes.js";
 import channelRoute from "./routes/channelRoutes.js";
 import cors from "cors"
 import videoRouter from "./routes/videoRoutes.js";
+import commentRouter from "./routes/commentRoutes.js";
 
 
 const MONGO_URI = process.env.MONGO_URI;
@@ -18,6 +19,7 @@ connectDB(MONGO_URI);
 app.use('/api/auth' , authRouter)
 app.use('/api/channels' , channelRoute)
 app.use('/api/videos' , videoRouter)
+app.use('/api/comments', commentRouter)
 
 app.get("/", (req, res) => {
   return res.status(200).json({ success: true, status: "Active : healthy" });

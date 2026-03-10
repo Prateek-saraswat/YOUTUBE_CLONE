@@ -4,12 +4,9 @@ import protect from '../middlewares/authMiddleware.js'
 
 const commentRouter = express.Router()
 
-// video ke comments
-commentRouter.post('/:id/comments', protect, addComment)
-commentRouter.get('/:id/comments', getComments)
-
-// single comment
-commentRouter.put('/comments/:id', protect, updateComment)
-commentRouter.delete('/comments/:id', protect, deleteComment)
+commentRouter.post('/:videoId', protect, addComment)      // add comment
+commentRouter.get('/:videoId', getComments)               // get comments
+commentRouter.put('/:id', protect, updateComment)         // update comment
+commentRouter.delete('/:id', protect, deleteComment)      // delete comment
 
 export default commentRouter
