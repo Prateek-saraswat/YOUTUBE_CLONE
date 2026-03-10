@@ -1,4 +1,5 @@
-
+import Video from "../models/Video.js"
+import Channel from "../models/Channel.js"
 
 export const uploadVideo = async (req, res) => {
     try {
