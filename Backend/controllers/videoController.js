@@ -127,3 +127,34 @@ export const updateVideo = async (req, res) => {
         res.status(500).json({ message: error.message })
     }
 }
+
+
+// 5. Delete Video
+export const deleteVideo = async (req, res) => {
+    try {
+        const { id } = req.params
+
+        const video = await Video.findById(id)
+
+        if (!video) {
+            return res.status(404).json({ message: "Video not found" })
+        }
+
+        // owner check karo
+        if (video.uploader.toString() !== req.user._id.toString()) {
+            return res.status(403).json({ message: "Not authorized" })
+        }
+
+        await Video.findByIdAndDelete(id)
+
+        // channel ke videos array se remove karo
+        await Channel.findByIdAndUpdate(video.channel, {
+            $pull: { videos: id }
+        })
+
+        res.status(200).json({ message: "Video deleted successfully" })
+
+    } catch (error) {
+        res.status(500).json({ message: error.message })
+    }
+}
