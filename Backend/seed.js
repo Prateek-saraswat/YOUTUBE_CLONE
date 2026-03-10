@@ -386,3 +386,4 @@ const seedDB = async () => {
 };
 
 seedDB();
+
