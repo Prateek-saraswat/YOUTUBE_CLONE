@@ -41,6 +41,36 @@ const formatSubs = (n) => {
   return n.toString();
 };
 
+const getYouTubeEmbedUrl = (url) => {
+  if (!url) return "";
+
+  try {
+    if (url.includes("youtube.com/embed/")) {
+      return url;
+    }
+
+    if (url.includes("youtube.com/watch")) {
+      const parsedUrl = new URL(url);
+      const videoId = parsedUrl.searchParams.get("v");
+      if (videoId) {
+        return `https://www.youtube.com/embed/${videoId}`;
+      }
+    }
+
+    if (url.includes("youtu.be/")) {
+      const parsedUrl = new URL(url);
+      const videoId = parsedUrl.pathname.slice(1);
+      if (videoId) {
+        return `https://www.youtube.com/embed/${videoId}`;
+      }
+    }
+
+    return url;
+  } catch {
+    return url;
+  }
+};
+
 // ── Sub-components ─────────────────────────────────────────────────────────
 
 /** Joined Like / Dislike pill — exact YouTube design */
@@ -321,6 +351,7 @@ const VideoPlayer = () => {
 
   const description   = video.description || "No description available.";
   const isYouTube     = video.videoUrl?.includes("youtube.com") || video.videoUrl?.includes("youtu.be");
+  const playableUrl   = isYouTube ? getYouTubeEmbedUrl(video.videoUrl) : video.videoUrl;
   const descPreview   = description.slice(0, 150);
   const hasMoreDesc   = description.length > 150;
 
@@ -357,7 +388,7 @@ const VideoPlayer = () => {
           >
             {isYouTube ? (
               <iframe
-                src={video.videoUrl}
+                src={playableUrl}
                 title={video.title}
                 allowFullScreen
                 className="w-full h-full"
