@@ -158,3 +158,66 @@ export const deleteVideo = async (req, res) => {
         res.status(500).json({ message: error.message })
     }
 }
+
+
+// 6. Like Video
+export const likeVideo = async (req, res) => {
+    try {
+        const { id } = req.params
+        const userId = req.user._id
+
+        const video = await Video.findById(id)
+
+        if (!video) {
+            return res.status(404).json({ message: "Video not found" })
+        }
+
+        // agar pehle se like kiya hai → unlike karo
+        if (video.likes.includes(userId)) {
+            await Video.findByIdAndUpdate(id, { $pull: { likes: userId } })
+            return res.status(200).json({ message: "Like removed" })
+        }
+
+        // agar dislike kiya tha → dislike hatao
+        await Video.findByIdAndUpdate(id, { $pull: { dislikes: userId } })
+
+        // like add karo
+        await Video.findByIdAndUpdate(id, { $push: { likes: userId } })
+
+        res.status(200).json({ message: "Video liked" })
+
+    } catch (error) {
+        res.status(500).json({ message: error.message })
+    }
+}
+
+// 7. Dislike Video
+export const dislikeVideo = async (req, res) => {
+    try {
+        const { id } = req.params
+        const userId = req.user._id
+
+        const video = await Video.findById(id)
+
+        if (!video) {
+            return res.status(404).json({ message: "Video not found" })
+        }
+
+        // agar pehle se dislike kiya hai → undislike karo
+        if (video.dislikes.includes(userId)) {
+            await Video.findByIdAndUpdate(id, { $pull: { dislikes: userId } })
+            return res.status(200).json({ message: "Dislike removed" })
+        }
+
+        // agar like kiya tha → like hatao
+        await Video.findByIdAndUpdate(id, { $pull: { likes: userId } })
+
+        // dislike add karo
+        await Video.findByIdAndUpdate(id, { $push: { dislikes: userId } })
+
+        res.status(200).json({ message: "Video disliked" })
+
+    } catch (error) {
+        res.status(500).json({ message: error.message })
+    }
+}
