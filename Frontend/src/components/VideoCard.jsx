@@ -108,7 +108,7 @@ const VideoCard = ({ video, channelContext }) => {
             className="text-xs text-gray-500 hover:text-black transition"
             onClick={handleChannelClick}
           >
-            {video.channel?.channelName || "Unknown Channel"}
+            {video.channel?.channelName || channelContext?.channelName || "Unknown Channel"}
           </div>
 
           {/* Views & Time */}

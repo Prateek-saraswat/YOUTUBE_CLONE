@@ -19,7 +19,7 @@ const categories = [
 const CreateEditVideo = () => {
     const { channelId, videoId } = useParams();
     const navigate = useNavigate();
-    const { user } = useAuth();
+    const { auth } = useAuth();
     const isEditing = Boolean(videoId);
 
     // set all data in state
@@ -56,7 +56,7 @@ const CreateEditVideo = () => {
     }, [videoId, isEditing]);
 
     // Redirect if not logged in
-    if (!user) {
+    if (!auth) {
         navigate('/login');
         return null;
     }
@@ -80,7 +80,7 @@ const CreateEditVideo = () => {
             if (isEditing) {
                 await API.put(`/videos/${videoId}`, formData);
             } else {
-                await API.post('/videos', { ...formData, channelId });
+                await API.post('/videos', formData);
             }
             navigate(`/channel/${channelId}`);
         } catch (err) {

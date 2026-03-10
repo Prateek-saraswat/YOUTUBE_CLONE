@@ -13,7 +13,7 @@ const ChannelPage = () => {
   // Used for page navigation
   const navigate = useNavigate();
   // Get logged-in user from Auth Context
-  const { user, updateUser } = useAuth();
+  const { auth, updateUser } = useAuth();
   // Store channel data
   const [channel, setChannel] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -66,9 +66,9 @@ const ChannelPage = () => {
 
         setChannel(data);
         // Check if current user is the owner of the channel
-        if (user && data.owner) {
+        if (auth && data.owner) {
           const ownerId = data.owner._id || data.owner;
-          setIsOwner(ownerId.toString() === user._id.toString());
+          setIsOwner(ownerId.toString() === auth.user.id.toString());
         }
       } catch (err) {
         console.log(err);
@@ -78,7 +78,7 @@ const ChannelPage = () => {
     };
 
     fetchChannel();
-  }, [id, user]);
+  }, [id, auth]);
 
     // Handle channel creation
   const handleCreateChannel = async (e) => {
@@ -88,15 +88,15 @@ const ChannelPage = () => {
     try {
             // Send create request to backend
       const res = await API.post("/channels", channelForm);
-      const channel = res.data;
+      const createdChannel  = res.data.channel;
 
-      if (!channel || !channel._id) {
+      if (!createdChannel || !createdChannel._id) {
         throw new Error("Invalid response");
       }
 
-      updateUser({ channels: [channel._id] });
+      updateUser({ channel: createdChannel._id });
 
-      navigate(`/channel/${channel._id}`, { replace: true });
+      navigate(`/channel/${createdChannel._id}`, { replace: true });
     } catch (err) {
       console.error(err);
       setFormError(err.response?.data?.message || "Channel creation failed");
@@ -109,7 +109,7 @@ const ChannelPage = () => {
     if (!channel) return;
 
     try {
-      await API.put(`/channels/edit-channel/${channel._id}`, editChannelForm);
+      await API.put(`/channels/${channel._id}`, editChannelForm);
 
       setChannel((prev) => ({
         ...prev,

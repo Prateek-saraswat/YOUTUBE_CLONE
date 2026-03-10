@@ -23,7 +23,7 @@ const timeAgo = (dateStr) => {
 // CommentSection Component
 // This component handles displaying, adding, editing, and deleting comments
 const CommentSection = ({ videoId }) => {
-  const { user } = useAuth();
+  const { auth } = useAuth();
   const [comments, setComments] = useState([]);
   const [newComment, setNewComment] = useState("");
   const [editingId, setEditingId] = useState(null);
@@ -64,7 +64,7 @@ const CommentSection = ({ videoId }) => {
         text: newComment,
       });
       // Add new comment at the top of list
-      setComments([data, ...comments]);
+      setComments([data.comment, ...comments]);
       // Clear input field
       setNewComment("");
     } catch (err) {
@@ -92,7 +92,7 @@ const CommentSection = ({ videoId }) => {
         text: editText,
       });
       // Update comment in UI
-      setComments(comments.map((c) => (c._id === commentId ? data : c)));
+      setComments(comments.map((c) => (c._id === commentId ? data.comment : c)));
 
       setEditingId(null);
       setEditText("");
@@ -172,15 +172,15 @@ const CommentSection = ({ videoId }) => {
       </h3>
 
       {/* Add Comment */}
-      {user ? (
+      {auth ? (
         <div className="flex gap-3 mb-6 items-start">
           <img
             className="w-10 h-10 rounded-full object-cover"
             src={
-              user.avatar ||
-              `https://ui-avatars.com/api/?name=${user.username}&background=0D8ABC&color=fff`
+              auth.user.avatar ||
+              `https://ui-avatars.com/api/?name=${auth.user.name}&background=0D8ABC&color=fff`
             }
-            alt={user.username}
+            alt={auth.user.name}
           />
 
           <form className="flex-1" onSubmit={handleAddComment}>
@@ -287,7 +287,7 @@ const CommentSection = ({ videoId }) => {
                 <>
                   <p className="text-sm text-black mt-1">{comment.text}</p>
 
-                  {user && user._id === comment.user?._id && (
+                  {auth && auth.user.id === comment.user?._id && (
                     <div className="flex gap-3 mt-1 text-xs text-gray-700">
                       <button
                         onClick={() => startEditing(comment)}

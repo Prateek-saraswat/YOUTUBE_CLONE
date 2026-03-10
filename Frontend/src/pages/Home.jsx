@@ -38,7 +38,7 @@ const Home = () => {
         console.log(data);
 
         // Save videos in state
-        setVideos(data.videos);
+        setVideos(data);
       } catch (err) {
         // Handle API error
         console.error("Failed to fetch videos:", err);

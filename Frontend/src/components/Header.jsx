@@ -10,7 +10,7 @@ import { AiOutlineBell } from "react-icons/ai";
 // onToggleSidebar -> function passed from parent to open/close sidebar
 const Header = ({ onToggleSidebar }) => {
   // Get user data and logout function from Auth Context
-  const { user, logout } = useAuth();
+  const { auth, logout } = useAuth();
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState("");
   // State to control user dropdown visibility
@@ -88,7 +88,7 @@ const Header = ({ onToggleSidebar }) => {
       {/* RIGHT SECTION */}
       {/* Displays user profile or login button */}
       <div className="relative flex items-center flex-shrink-0">
-        {user ? (
+        {auth ? (
           <>
             <button
               onClick={() => setShowDropdown(!showDropdown)}
@@ -96,21 +96,21 @@ const Header = ({ onToggleSidebar }) => {
             >
               <img
                 src={
-                  user.avatar ||
-                  `https://ui-avatars.com/api/?name=${user.username}`
+                  auth.user.avatar ||
+                  `https://ui-avatars.com/api/?name=${auth.user.name}`
                 }
-                alt={user.username}
+                alt={auth.user.name}
                 className="w-8 h-8 rounded-full"
               />
-              <span className="hidden md:block">{user.username}</span>
+              <span className="hidden md:block">{auth.user.name}</span>
             </button>
 
             {showDropdown && (
               <div className="absolute right-0 mt-35 w-44 bg-white border border-gray-200 rounded-md shadow-lg">
                 <Link
                   to={
-                    user.channels?.length
-                      ? `/channel/${user.channels[0]}`
+                    auth.user.channel
+                      ? `/channel/${auth.user.channel}`
                       : "/channel/create"
                   }
                   onClick={() => setShowDropdown(false)}
