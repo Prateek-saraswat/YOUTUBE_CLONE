@@ -3,245 +3,303 @@ import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import API from "../api/api.js";
 import VideoCard from "../components/VideoCard.jsx";
-import { FiUpload } from "react-icons/fi";
+import { FiUpload, FiEdit2 } from "react-icons/fi";
+import { HiDotsVertical } from "react-icons/hi";
 import { useAuth } from "../context/authContext.jsx";
 import Swal from "sweetalert2";
 
+// ── Helpers ────────────────────────────────────────────────────────────────
+const formatSubs = (n) => {
+  if (!n) return "0";
+  if (n >= 1_000_000) return (n / 1_000_000).toFixed(2).replace(/\.?0+$/, "") + "M";
+  if (n >= 1_000)     return (n / 1_000).toFixed(1).replace(".0", "") + "K";
+  return n.toString();
+};
+
+// ── Tabs ───────────────────────────────────────────────────────────────────
+const TABS = ["Home", "Videos", "Playlists", "About"];
+
+// ── Input field used in both forms ────────────────────────────────────────
+const Field = ({ label, value, onChange, type = "text", rows }) => (
+  <div className="flex flex-col gap-1">
+    <label
+      style={{
+        fontSize: "12px",
+        fontWeight: 500,
+        color: "#606060",
+        fontFamily: "'Roboto','Arial',sans-serif",
+      }}
+    >
+      {label}
+    </label>
+    {rows ? (
+      <textarea
+        rows={rows}
+        value={value}
+        onChange={onChange}
+        style={{
+          border: "1px solid #ccc",
+          borderRadius: "4px",
+          padding: "8px 12px",
+          fontSize: "14px",
+          color: "#0f0f0f",
+          fontFamily: "'Roboto','Arial',sans-serif",
+          resize: "vertical",
+          outline: "none",
+        }}
+        onFocus={(e) => (e.target.style.borderColor = "#065fd4")}
+        onBlur={(e)  => (e.target.style.borderColor = "#ccc")}
+      />
+    ) : (
+      <input
+        type={type}
+        value={value}
+        onChange={onChange}
+        style={{
+          border: "1px solid #ccc",
+          borderRadius: "4px",
+          padding: "8px 12px",
+          fontSize: "14px",
+          color: "#0f0f0f",
+          fontFamily: "'Roboto','Arial',sans-serif",
+          outline: "none",
+        }}
+        onFocus={(e) => (e.target.style.borderColor = "#065fd4")}
+        onBlur={(e)  => (e.target.style.borderColor = "#ccc")}
+      />
+    )}
+  </div>
+);
+
+// ── YT-style pill button ───────────────────────────────────────────────────
+const Pill = ({ children, onClick, primary = false, danger = false, small = false, type = "button" }) => {
+  const bg = primary ? "#065fd4" : danger ? "#f2f2f2" : "#f2f2f2";
+  const color = primary ? "#fff" : danger ? "#cc0000" : "#0f0f0f";
+  return (
+    <button
+      type={type}
+      onClick={onClick}
+      style={{
+        background: bg,
+        color,
+        border: "none",
+        borderRadius: "20px",
+        padding: small ? "0 12px" : "0 16px",
+        height: small ? "32px" : "36px",
+        fontFamily: "'Roboto','Arial',sans-serif",
+        fontWeight: 500,
+        fontSize: small ? "13px" : "14px",
+        cursor: "pointer",
+        whiteSpace: "nowrap",
+        display: "inline-flex",
+        alignItems: "center",
+        gap: "6px",
+        transition: "background 0.15s",
+      }}
+      onMouseEnter={(e) => {
+        if (primary)       e.currentTarget.style.background = "#0356c3";
+        else if (danger)   e.currentTarget.style.background = "#fce8e6";
+        else               e.currentTarget.style.background = "#e5e5e5";
+      }}
+      onMouseLeave={(e) => {
+        e.currentTarget.style.background = bg;
+      }}
+    >
+      {children}
+    </button>
+  );
+};
+
+// ── Modal wrapper ──────────────────────────────────────────────────────────
+const Modal = ({ title, onClose, children }) => (
+  <div
+    style={{
+      position: "fixed", inset: 0, zIndex: 50,
+      background: "rgba(0,0,0,0.5)",
+      display: "flex", alignItems: "center", justifyContent: "center",
+      padding: "16px",
+    }}
+  >
+    <div
+      style={{
+        background: "#fff",
+        borderRadius: "12px",
+        padding: "24px",
+        width: "100%",
+        maxWidth: "480px",
+        fontFamily: "'Roboto','Arial',sans-serif",
+        boxShadow: "0 4px 24px rgba(0,0,0,0.18)",
+      }}
+    >
+      <div className="flex items-center justify-between mb-5">
+        <h2 style={{ fontSize: "18px", fontWeight: 600, color: "#0f0f0f", margin: 0 }}>
+          {title}
+        </h2>
+        <button
+          onClick={onClose}
+          style={{
+            background: "none", border: "none", cursor: "pointer",
+            fontSize: "22px", color: "#606060", lineHeight: 1,
+          }}
+        >
+          ×
+        </button>
+      </div>
+      {children}
+    </div>
+  </div>
+);
+
+// ══════════════════════════════════════════════════════════════════════════
+//  MAIN PAGE
+// ══════════════════════════════════════════════════════════════════════════
 const ChannelPage = () => {
-  // Get channel id from URL ( /channel/:id )
-  const { id } = useParams();
-  // Used for page navigation
-  const navigate = useNavigate();
-  // Get logged-in user from Auth Context
+  const { id }              = useParams();
+  const navigate            = useNavigate();
   const { auth, updateUser } = useAuth();
-  // Store channel data
-  const [channel, setChannel] = useState(null);
-  const [loading, setLoading] = useState(true);
-  // Check if logged-in user is the owner of the channel
-  const [isOwner, setIsOwner] = useState(false);
 
-  // Show create channel form
-  const [showCreateForm, setShowCreateForm] = useState(false);
+  const [channel,          setChannel]          = useState(null);
+  const [loading,          setLoading]          = useState(true);
+  const [isOwner,          setIsOwner]          = useState(false);
+  const [activeTab,        setActiveTab]        = useState("Videos");
+  const [subscribed,       setSubscribed]       = useState(false);
+  const [showCreateForm,   setShowCreateForm]   = useState(false);
+  const [showEditForm,     setShowEditForm]     = useState(false);
+  const [deletingVideoId,  setDeletingVideoId]  = useState(null);
+  const [formError,        setFormError]        = useState("");
 
-  // Show edit channel form
-  const [showEditForm, setShowEditForm] = useState(false);
-
-  // Form state for creating a new channel
   const [channelForm, setChannelForm] = useState({
-    channelName: "",
-    description: "",
-    channelBanner: "",
+    channelName: "", description: "", channelBanner: "",
   });
-
-  // Form state for editing an existing channel
   const [editChannelForm, setEditChannelForm] = useState({
-    channelName: "",
-    description: "",
-    channelBanner: "",
+    channelName: "", description: "", channelBanner: "",
   });
 
-  // Error message for form
-  const [formError, setFormError] = useState("");
-
-  // Store video id that is currently being deleted
-  const [deletingVideoId, setDeletingVideoId] = useState(null);
-
-    // Runs when component loads OR id/user changes
   useEffect(() => {
     const fetchChannel = async () => {
-            // If route is /channel/create -> show create form
-      if (id === "create") {
-        setShowCreateForm(true);
-        setLoading(false);
-        return;
-      }
-
-      // reset form view
+      if (id === "create") { setShowCreateForm(true); setLoading(false); return; }
       setShowCreateForm(false);
-
       try {
         setLoading(true);
-        // Call backend API to get channel details
         const { data } = await API.get(`/channels/${id}`);
-
         setChannel(data);
-        // Check if current user is the owner of the channel
         if (auth && data.owner) {
           const ownerId = data.owner._id || data.owner;
           setIsOwner(ownerId.toString() === auth.user.id.toString());
         }
       } catch (err) {
-        console.log(err);
+        console.error(err);
       } finally {
         setLoading(false);
       }
     };
-
     fetchChannel();
   }, [id, auth]);
 
-    // Handle channel creation
   const handleCreateChannel = async (e) => {
     e.preventDefault();
     setFormError("");
-
     try {
-            // Send create request to backend
       const res = await API.post("/channels", channelForm);
-      const createdChannel  = res.data.channel;
-
-      if (!createdChannel || !createdChannel._id) {
-        throw new Error("Invalid response");
-      }
-
-      updateUser({ channel: createdChannel._id });
-
-      navigate(`/channel/${createdChannel._id}`, { replace: true });
+      const created = res.data.channel;
+      if (!created?._id) throw new Error("Invalid response");
+      updateUser({ channel: created._id });
+      navigate(`/channel/${created._id}`, { replace: true });
     } catch (err) {
-      console.error(err);
       setFormError(err.response?.data?.message || "Channel creation failed");
     }
   };
 
   const handleUpdateChannel = async (e) => {
     e.preventDefault();
-    // Prevent update if channel not loaded
     if (!channel) return;
-
     try {
       await API.put(`/channels/${channel._id}`, editChannelForm);
-
-      setChannel((prev) => ({
-        ...prev,
-        channelName: editChannelForm.channelName,
-        description: editChannelForm.description,
-        channelBanner: editChannelForm.channelBanner,
-      }));
-
+      setChannel((prev) => ({ ...prev, ...editChannelForm }));
       setShowEditForm(false);
-
-      Swal.fire({
-        icon: "success",
-        title: "Channel updated!",
-        timer: 1500,
-        showConfirmButton: false,
-      });
+      Swal.fire({ icon: "success", title: "Channel updated!", timer: 1500, showConfirmButton: false });
     } catch (err) {
-      console.error("Update channel error:", err);
-
-      Swal.fire({
-        icon: "error",
-        title: "Error",
-        text: err.response?.data?.message || "Failed to update channel",
-      });
+      Swal.fire({ icon: "error", title: "Error", text: err.response?.data?.message || "Failed to update channel" });
     }
   };
 
-  // Handle deleting a video from the channel
   const handleDeleteVideo = async (videoId) => {
     if (deletingVideoId) return;
-    // Show confirmation popup
     const result = await Swal.fire({
       title: "Delete video?",
       text: "This video will be permanently deleted.",
       icon: "warning",
       showCancelButton: true,
-      confirmButtonColor: "#ef4444",
-      cancelButtonColor: "#6b7280",
+      confirmButtonColor: "#cc0000",
+      cancelButtonColor: "#606060",
       confirmButtonText: "Delete",
     });
-
     if (!result.isConfirmed) return;
-
     try {
       setDeletingVideoId(videoId);
-
       await API.delete(`/videos/${videoId}`);
-
-      setChannel((prev) => ({
-        ...prev,
-        videos: prev.videos.filter((v) => v._id !== videoId),
-      }));
-
-      Swal.fire({
-        icon: "success",
-        title: "Deleted!",
-        text: "Video deleted successfully",
-        timer: 1500,
-        showConfirmButton: false,
-      });
+      setChannel((prev) => ({ ...prev, videos: prev.videos.filter((v) => v._id !== videoId) }));
+      Swal.fire({ icon: "success", title: "Deleted!", timer: 1500, showConfirmButton: false });
     } catch (err) {
-      const message = err.response?.data?.message || "Failed to delete video";
-
-      Swal.fire({
-        icon: "error",
-        title: "Error",
-        text: message,
-      });
-
-      console.log(err);
+      Swal.fire({ icon: "error", title: "Error", text: err.response?.data?.message || "Failed to delete video" });
     } finally {
       setDeletingVideoId(null);
     }
   };
 
+  // ── Loading ──
   if (loading) {
     return (
-      <div className="flex justify-center items-center h-40">
-        <div className="w-8 h-8 border-4 border-gray-300 border-t-red-500 rounded-full animate-spin"></div>
+      <div className="flex justify-center items-center h-60">
+        <div className="w-10 h-10 border-4 border-gray-200 border-t-red-600 rounded-full animate-spin" />
       </div>
     );
   }
 
+  // ── Create channel form ──
   if (showCreateForm || id === "create") {
     return (
-      <div className="max-w-md mx-auto mt-10 border-2 border-black p-5.5 rounded-4xl ">
-        <h2 className="text-xl font-semibold mb-4 text-black">
-          Create Channel
+      <div
+        style={{
+          maxWidth: "480px",
+          margin: "48px auto",
+          padding: "32px",
+          border: "1px solid #e5e5e5",
+          borderRadius: "12px",
+          fontFamily: "'Roboto','Arial',sans-serif",
+        }}
+      >
+        <h2 style={{ fontSize: "22px", fontWeight: 600, color: "#0f0f0f", marginBottom: "24px" }}>
+          Create your channel
         </h2>
 
         {formError && (
-          <div className="bg-red-100 text-red-600 p-2 rounded mb-3">
+          <div style={{ background: "#fce8e6", color: "#cc0000", padding: "10px 14px", borderRadius: "6px", fontSize: "14px", marginBottom: "16px" }}>
             {formError}
           </div>
         )}
 
-        <form onSubmit={handleCreateChannel} className="space-y-3">
-          <input
-            type="text"
-            placeholder="Channel Name"
-            className="w-full border p-2 rounded text-black"
+        <form onSubmit={handleCreateChannel} className="flex flex-col gap-4">
+          <Field
+            label="Channel name"
             value={channelForm.channelName}
-            onChange={(e) =>
-              setChannelForm({ ...channelForm, channelName: e.target.value })
-            }
+            onChange={(e) => setChannelForm({ ...channelForm, channelName: e.target.value })}
           />
-
-          <textarea
-            placeholder="Description"
-            className="w-full border p-2 rounded text-black"
+          <Field
+            label="Description"
             value={channelForm.description}
-            onChange={(e) =>
-              setChannelForm({ ...channelForm, description: e.target.value })
-            }
+            onChange={(e) => setChannelForm({ ...channelForm, description: e.target.value })}
+            rows={3}
           />
-
-          <input
-            type="text"
-            placeholder="Banner URL"
-            className="w-full border p-2 rounded text-black"
+          <Field
+            label="Banner URL"
             value={channelForm.channelBanner}
-            onChange={(e) =>
-              setChannelForm({
-                ...channelForm,
-                channelBanner: e.target.value,
-              })
-            }
+            onChange={(e) => setChannelForm({ ...channelForm, channelBanner: e.target.value })}
           />
-
-          <button className="bg-blue-500 text-black w-full py-2 rounded-2xl">
-            Create Channel
-          </button>
+          <div className="flex justify-end gap-3 mt-2">
+            <Pill onClick={() => navigate(-1)}>Cancel</Pill>
+            <Pill primary type="submit">Create channel</Pill>
+          </div>
         </form>
       </div>
     );
@@ -249,191 +307,329 @@ const ChannelPage = () => {
 
   if (!channel) {
     return (
-      <div className="text-center mt-10 text-black">Channel not found</div>
+      <div style={{ textAlign: "center", padding: "80px 16px", fontFamily: "'Roboto','Arial',sans-serif", color: "#0f0f0f" }}>
+        Channel not found
+      </div>
     );
   }
 
+  const videoCount = channel.videos?.length || 0;
+
   return (
-    <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pb-8">
-      {/* Banner */}
-      <div className="h-48 w-full overflow-hidden rounded">
+    <div style={{ fontFamily: "'Roboto','Arial',sans-serif", color: "#0f0f0f", maxWidth: "1284px", margin: "0 auto" }}>
+
+      {/* ── BANNER ── */}
+      <div style={{ width: "100%", aspectRatio: "32/9", maxHeight: "200px", overflow: "hidden", background: "#e5e5e5" }}>
         <img
-          src={channel.channelBanner || "https://placehold.co/1200x300"}
-          className="w-full h-full object-cover"
-          alt="Channel Banner"
+          src={channel.channelBanner || "https://placehold.co/2560x424/e5e5e5/aaa?text=+"}
+          alt="Channel banner"
+          style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
+          onError={(e) => { e.target.src = "https://placehold.co/2560x424/e5e5e5/aaa?text=+"; }}
         />
       </div>
 
-      {/* Channel Header */}
-      <div className="flex flex-col md:flex-row items-center md:items-start text-center md:text-left gap-4 md:gap-6 mt-6 border-b pb-6">
-        <img
-          className="w-20 h-20 md:w-24 md:h-24 rounded-full object-cover bg-gray-200 flex-shrink-0"
-          src={
-            channel.owner?.avatar ||
-            `https://ui-avatars.com/api/?name=${
-              channel.channelName || "C"
-            }&background=random&color=fff&size=128`
-          }
-          alt={channel.channelName}
-          onError={(e) => {
-            e.target.src =
-              "https://ui-avatars.com/api/?name=C&background=333&color=fff&size=128";
-          }}
-        />
+      {/* ── CHANNEL HEADER ── */}
+      <div style={{ padding: "16px 24px 0 24px" }}>
+        <div className="flex flex-col sm:flex-row items-start sm:items-end gap-4 sm:gap-6 pb-4" style={{ borderBottom: "1px solid #e5e5e5" }}>
 
-        <div className="flex-1">
-          <h1 className="text-2xl font-bold text-black">
-            {channel.channelName}
-          </h1>
-          <p className="text-gray-700 text-sm mt-1">
-            {channel.subscribers} subscribers • {channel.videos?.length} videos
-          </p>
-          {channel.description && (
-            <p className="text-gray-700 text-sm mt-2">{channel.description}</p>
-          )}
+          {/* Avatar */}
+          <img
+            src={
+              channel.owner?.avatar ||
+              `https://ui-avatars.com/api/?name=${channel.channelName || "C"}&background=606060&color=fff&size=160`
+            }
+            alt={channel.channelName}
+            style={{
+              width: "80px", height: "80px",
+              borderRadius: "50%",
+              objectFit: "cover",
+              flexShrink: 0,
+              background: "#e5e5e5",
+            }}
+            onError={(e) => { e.target.src = "https://ui-avatars.com/api/?name=C&background=606060&color=fff&size=160"; }}
+          />
+
+          {/* Info */}
+          <div className="flex-1 min-w-0">
+            <h1 style={{ fontSize: "24px", fontWeight: 700, lineHeight: "32px", margin: "0 0 4px" }}>
+              {channel.channelName}
+            </h1>
+            <p style={{ fontSize: "14px", color: "#606060", margin: "0 0 6px", lineHeight: "20px" }}>
+              @{(channel.channelName || "channel").toLowerCase().replace(/\s+/g, "")}
+              &nbsp;•&nbsp;
+              <strong style={{ color: "#0f0f0f" }}>{formatSubs(channel.subscribers)}</strong> subscribers
+              &nbsp;•&nbsp;
+              <strong style={{ color: "#0f0f0f" }}>{videoCount}</strong> video{videoCount !== 1 ? "s" : ""}
+            </p>
+            {channel.description && (
+              <p style={{ fontSize: "14px", color: "#606060", margin: 0, lineHeight: "20px", maxWidth: "600px" }}
+                 className="line-clamp-2">
+                {channel.description}
+              </p>
+            )}
+          </div>
+
+          {/* Action buttons */}
+          <div className="flex items-center gap-2 flex-wrap flex-shrink-0">
+            {isOwner ? (
+              <>
+                <Pill onClick={() => navigate(`/channel/${channel._id}/upload`)}>
+                  <FiUpload size={15} /> Upload
+                </Pill>
+                <Pill
+                  onClick={() => {
+                    setEditChannelForm({
+                      channelName: channel.channelName || "",
+                      description: channel.description || "",
+                      channelBanner: channel.channelBanner || "",
+                    });
+                    setShowEditForm(true);
+                  }}
+                >
+                  <FiEdit2 size={14} /> Customise channel
+                </Pill>
+              </>
+            ) : (
+              <>
+                <button
+                  onClick={() => setSubscribed((p) => !p)}
+                  style={{
+                    background: subscribed ? "#f2f2f2" : "#0f0f0f",
+                    color: subscribed ? "#0f0f0f" : "#fff",
+                    border: "none",
+                    borderRadius: "20px",
+                    padding: "0 16px",
+                    height: "36px",
+                    fontWeight: 500,
+                    fontSize: "14px",
+                    cursor: "pointer",
+                    transition: "background 0.15s",
+                    fontFamily: "'Roboto','Arial',sans-serif",
+                  }}
+                >
+                  {subscribed ? "Subscribed" : "Subscribe"}
+                </button>
+                {/* Bell icon after subscribed */}
+                {subscribed && (
+                  <button
+                    style={{
+                      width: "36px", height: "36px",
+                      borderRadius: "50%",
+                      background: "#f2f2f2",
+                      border: "none",
+                      cursor: "pointer",
+                      display: "flex", alignItems: "center", justifyContent: "center",
+                      fontSize: "18px",
+                    }}
+                  >🔔</button>
+                )}
+              </>
+            )}
+          </div>
         </div>
 
-        <div className="flex flex-wrap justify-center md:justify-end gap-3 w-full md:w-auto md:ml-auto mt-2 md:mt-0">
-          <button className="bg-red-600 hover:bg-red-700 text-white px-5 py-2 rounded-full text-sm font-medium transition">
-            Subscribe
-          </button>
+        {/* ── TABS ── */}
+        <div
+          className="flex gap-0 overflow-x-auto"
+          style={{ borderBottom: "1px solid #e5e5e5", marginTop: 0 }}
+        >
+          {TABS.map((tab) => (
+            <button
+              key={tab}
+              onClick={() => setActiveTab(tab)}
+              style={{
+                background: "none",
+                border: "none",
+                borderBottom: activeTab === tab ? "2px solid #0f0f0f" : "2px solid transparent",
+                padding: "12px 16px",
+                cursor: "pointer",
+                fontFamily: "'Roboto','Arial',sans-serif",
+                fontWeight: activeTab === tab ? 500 : 400,
+                fontSize: "14px",
+                color: activeTab === tab ? "#0f0f0f" : "#606060",
+                whiteSpace: "nowrap",
+                transition: "color 0.15s",
+                marginBottom: "-1px",
+              }}
+            >
+              {tab}
+            </button>
+          ))}
+        </div>
+      </div>
 
-          {isOwner && (
-            <>
-              <button
-                onClick={() => navigate(`/channel/${channel._id}/upload`)}
-                className="flex items-center gap-2 bg-red-500 text-white px-5 py-2 rounded-full text-sm font-medium hover:bg-red-600 transition"
-              >
-                <FiUpload />
-                Upload
-              </button>
+      {/* ── CONTENT ── */}
+      <div style={{ padding: "24px" }}>
 
-              <button
-                onClick={() => {
-                  setEditChannelForm({
-                    channelName: channel.channelName || "",
-                    description: channel.description || "",
-                    channelBanner: channel.channelBanner || "",
-                  });
-                  setShowEditForm(true);
+        {/* Videos tab (default) */}
+        {(activeTab === "Videos" || activeTab === "Home") && (
+          <>
+            {videoCount === 0 ? (
+              <div
+                style={{
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  padding: "80px 16px",
+                  color: "#606060",
+                  gap: "12px",
                 }}
-                className="bg-blue-500 text-white px-5 py-2 rounded-full text-sm font-medium hover:bg-blue-600 transition"
               >
-                Edit Channel
-              </button>
-            </>
-          )}
-        </div>
+                <span style={{ fontSize: "48px" }}>📭</span>
+                <p style={{ fontSize: "16px", margin: 0 }}>No videos uploaded yet</p>
+                {isOwner && (
+                  <Pill primary onClick={() => navigate(`/channel/${channel._id}/upload`)}>
+                    <FiUpload size={15} /> Upload your first video
+                  </Pill>
+                )}
+              </div>
+            ) : (
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))",
+                  gap: "16px",
+                }}
+              >
+                {channel.videos.map((video) => (
+                  <div key={video._id} style={{ position: "relative" }}>
+                    {/* Owner controls overlay */}
+                    {isOwner && (
+                      <div
+                        style={{
+                          position: "absolute",
+                          top: "8px",
+                          right: "8px",
+                          zIndex: 10,
+                          display: "flex",
+                          gap: "6px",
+                          opacity: 0,
+                          transition: "opacity 0.15s",
+                        }}
+                        className="owner-actions"
+                      >
+                        <button
+                          onClick={() => navigate(`/channel/${channel._id}/edit/${video._id}`)}
+                          style={{
+                            background: "rgba(0,0,0,0.75)",
+                            color: "#fff",
+                            border: "none",
+                            borderRadius: "4px",
+                            padding: "4px 10px",
+                            fontSize: "12px",
+                            cursor: "pointer",
+                            fontFamily: "'Roboto','Arial',sans-serif",
+                          }}
+                        >
+                          Edit
+                        </button>
+                        <button
+                          onClick={() => handleDeleteVideo(video._id)}
+                          disabled={deletingVideoId === video._id}
+                          style={{
+                            background: "rgba(204,0,0,0.85)",
+                            color: "#fff",
+                            border: "none",
+                            borderRadius: "4px",
+                            padding: "4px 10px",
+                            fontSize: "12px",
+                            cursor: "pointer",
+                            fontFamily: "'Roboto','Arial',sans-serif",
+                            opacity: deletingVideoId === video._id ? 0.5 : 1,
+                          }}
+                        >
+                          {deletingVideoId === video._id ? "Deleting…" : "Delete"}
+                        </button>
+                      </div>
+                    )}
+                    <div className="video-card-wrapper">
+                      <VideoCard video={video} channelContext={channel} />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </>
+        )}
+
+        {/* About tab */}
+        {activeTab === "About" && (
+          <div style={{ maxWidth: "600px" }}>
+            <h3 style={{ fontSize: "16px", fontWeight: 600, marginBottom: "12px" }}>Description</h3>
+            <p style={{ fontSize: "14px", color: "#606060", lineHeight: "22px", whiteSpace: "pre-wrap" }}>
+              {channel.description || "No description provided."}
+            </p>
+            <div style={{ marginTop: "24px", borderTop: "1px solid #e5e5e5", paddingTop: "20px" }}>
+              <p style={{ fontSize: "14px", color: "#606060" }}>
+                <strong style={{ color: "#0f0f0f" }}>Subscribers:</strong>&nbsp;
+                {formatSubs(channel.subscribers)}
+              </p>
+              <p style={{ fontSize: "14px", color: "#606060", marginTop: "6px" }}>
+                <strong style={{ color: "#0f0f0f" }}>Videos:</strong>&nbsp;{videoCount}
+              </p>
+            </div>
+          </div>
+        )}
+
+        {/* Playlists tab placeholder */}
+        {activeTab === "Playlists" && (
+          <div style={{ textAlign: "center", padding: "80px 16px", color: "#606060" }}>
+            <span style={{ fontSize: "48px" }}>📋</span>
+            <p style={{ fontSize: "16px", marginTop: "12px" }}>No playlists yet</p>
+          </div>
+        )}
       </div>
 
-      {/* Edit Channel Form */}
+      {/* ── EDIT CHANNEL MODAL ── */}
       {showEditForm && (
-        <div className="bg-white p-6 rounded mt-6 text-black border-2">
-          <h2 className="text-lg font-semibold mb-4 text-black">
-            Edit Channel
-          </h2>
-
-          <form
-            onSubmit={handleUpdateChannel}
-            className="flex flex-col gap-3 text-black"
-          >
-            <label>Channel Name</label>
-            <input
-              type="text"
-              placeholder="Channel Name"
+        <Modal title="Edit channel" onClose={() => setShowEditForm(false)}>
+          <form onSubmit={handleUpdateChannel} className="flex flex-col gap-4">
+            <Field
+              label="Channel name"
               value={editChannelForm.channelName}
-              onChange={(e) =>
-                setEditChannelForm({
-                  ...editChannelForm,
-                  channelName: e.target.value,
-                })
-              }
-              className="border p-2 rounded"
+              onChange={(e) => setEditChannelForm({ ...editChannelForm, channelName: e.target.value })}
             />
-
-            <label>Description</label>
-            <textarea
-              placeholder="Description"
+            <Field
+              label="Description"
               value={editChannelForm.description}
-              onChange={(e) =>
-                setEditChannelForm({
-                  ...editChannelForm,
-                  description: e.target.value,
-                })
-              }
-              className="border p-2 rounded"
+              onChange={(e) => setEditChannelForm({ ...editChannelForm, description: e.target.value })}
               rows={3}
             />
-
-            <label>Banner URL</label>
-            <input
-              type="text"
-              placeholder="Banner URL"
+            <Field
+              label="Banner URL"
               value={editChannelForm.channelBanner}
-              onChange={(e) =>
-                setEditChannelForm({
-                  ...editChannelForm,
-                  channelBanner: e.target.value,
-                })
-              }
-              className="border p-2 rounded "
+              onChange={(e) => setEditChannelForm({ ...editChannelForm, channelBanner: e.target.value })}
             />
-
-            <div className="flex gap-3">
+            <div className="flex justify-end gap-3 mt-2">
+              <Pill onClick={() => setShowEditForm(false)}>Cancel</Pill>
               <button
                 type="submit"
-                className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+                style={{
+                  background: "#065fd4", color: "#fff",
+                  border: "none", borderRadius: "20px",
+                  padding: "0 20px", height: "36px",
+                  fontFamily: "'Roboto','Arial',sans-serif",
+                  fontWeight: 500, fontSize: "14px",
+                  cursor: "pointer",
+                }}
               >
                 Save
               </button>
-
-              <button
-                type="button"
-                onClick={() => setShowEditForm(false)}
-                className="bg-gray-600 text-white px-4 py-2 rounded hover:bg-gray-700"
-              >
-                Cancel
-              </button>
             </div>
           </form>
-        </div>
+        </Modal>
       )}
 
-      {/* Videos */}
-      <h2 className="text-lg font-semibold mt-6 mb-4">Videos</h2>
-
-      {channel.videos?.length > 0 ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-          {channel.videos.map((video) => (
-            <div key={video._id} className="relative group">
-              {isOwner && (
-                <div className="absolute right-2 top-2 flex gap-2 z-10">
-                  <button
-                    className="bg-blue-500 text-white px-2 py-1 text-xs rounded hover:bg-blue-600"
-                    onClick={() =>
-                      navigate(`/channel/${channel._id}/edit/${video._id}`)
-                    }
-                  >
-                    Edit
-                  </button>
-
-                  <button
-                    onClick={() => handleDeleteVideo(video._id)}
-                    disabled={deletingVideoId === video._id}
-                    className="bg-red-500 text-white px-2 py-1 text-xs rounded hover:bg-red-600 disabled:opacity-50"
-                  >
-                    {deletingVideoId === video._id ? "Deleting..." : "Delete"}
-                  </button>
-                </div>
-              )}
-
-              <VideoCard video={video} channelContext={channel} />
-            </div>
-          ))}
-        </div>
-      ) : (
-        <p className="text-center text-gray-700 mt-10">No videos uploaded</p>
-      )}
+      {/* CSS: show owner action buttons on card hover */}
+      <style>{`
+        .video-card-wrapper:hover ~ * .owner-actions,
+        .video-card-wrapper:hover + .owner-actions,
+        div:hover > .owner-actions { opacity: 1 !important; }
+        div:hover > .video-card-wrapper ~ .owner-actions { opacity: 1 !important; }
+        .video-card-wrapper:hover { z-index: 1; }
+        [style*="position: relative"]:hover .owner-actions { opacity: 1 !important; }
+      `}</style>
     </div>
   );
 };

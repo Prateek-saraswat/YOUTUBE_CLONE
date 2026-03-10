@@ -34,9 +34,6 @@ const Home = () => {
         // Call backend API with query parameters
         const { data } = await API.get("/videos", { params });
 
-        // Log response in console for debugging
-        console.log(data);
-
         // Save videos in state
         setVideos(data);
       } catch (err) {
@@ -60,21 +57,23 @@ const Home = () => {
   };
   
   return (
-    <div className="max-w-7xl mx-auto px-4" id="home-page">
+    <div className="max-w-[1600px] mx-auto px-1 sm:px-2" id="home-page">
       {/* Filter buttons */}
       <FilterButtons
         activeCategory={activeCategory}
         onCategoryChange={handleCategoryChange}
       />
 
+      <div className="pt-4 sm:pt-5">
+
       {/* Loading state */}
       {loading ? (
-        <div className="flex items-center justify-center min-h-[200px] w-full">
+        <div className="flex items-center justify-center min-h-[260px] w-full">
           <div className="w-10 h-10 border-4 border-gray-700 border-t-red-600 rounded-full animate-spin"></div>
         </div>
       ) : videos.length === 0 ? (
-        <div className="text-center py-16 px-5 text-gray-400">
-          <h2 className="text-xl mb-2 text-white">No videos found</h2>
+        <div className="text-center py-20 px-5 text-gray-500">
+          <h2 className="text-xl mb-2 text-black">No videos found</h2>
           <p className="text-sm">
             {searchQuery
               ? `No results for "${searchQuery}"`
@@ -84,11 +83,11 @@ const Home = () => {
       ) : (
         /* Video grid */
         <div
-          className="grid gap-x-4 gap-y-10 
+          className="grid gap-x-4 gap-y-8 sm:gap-x-5 sm:gap-y-10 
                      grid-cols-1 
                      sm:grid-cols-2 
                      md:grid-cols-3 
-                     lg:grid-cols-4"
+                     xl:grid-cols-4"
           id="video-grid"
         >
           {videos.map((video) => (
@@ -96,6 +95,7 @@ const Home = () => {
           ))}
         </div>
       )}
+      </div>
     </div>
   );
 };

@@ -40,7 +40,7 @@ function App() {
         <Sidebar isOpen={sidebarOpen} />
 
         <main
-          className={`flex-1 p-4 transition-all duration-300 min-w-0
+          className={`flex-1 px-3 py-4 sm:px-4 sm:py-5 lg:px-6 transition-all duration-300 min-w-0
            ${sidebarOpen ? "lg:ml-60" : "lg:ml-16"}`}
         >
           <Suspense fallback={<div className="text-center mt-10">Loading...</div>}>

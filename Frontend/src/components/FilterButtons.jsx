@@ -24,7 +24,7 @@ const FilterButtons = ({ activeCategory, onCategoryChange }) => {
     // top-14 -> distance from top (to stay below header)
     // overflow-x-auto -> allows horizontal scrolling on small screens
     // whitespace-nowrap -> keeps buttons in a single line
-    <div className="sticky top-14 bg-white z-40 flex gap-3 items-center overflow-x-auto px-3 py-2 whitespace-nowrap no-scrollbar w-full max-w-full border-b border-gray-100">
+    <div className="sticky top-14 bg-white/95 backdrop-blur z-40 flex gap-2.5 sm:gap-3 items-center overflow-x-auto px-1 sm:px-2 py-3 whitespace-nowrap no-scrollbar w-full max-w-full border-b border-gray-100 mb-1">
 
       {/* Loop through categories and create a button for each */}
       {categories.map((category) => (
@@ -38,7 +38,7 @@ const FilterButtons = ({ activeCategory, onCategoryChange }) => {
           onClick={() => onCategoryChange(category)}
 
           // Dynamic styling based on active category — matches YouTube chip design
-          className={`px-3 py-1.5 rounded-lg text-sm font-medium flex-shrink-0 transition-colors duration-150 cursor-pointer
+          className={`px-3.5 py-1.5 rounded-full text-sm font-medium flex-shrink-0 transition-colors duration-150 cursor-pointer shadow-sm
             ${
               activeCategory === category
                 ? "bg-[#0f0f0f] text-white"           // active: YT near-black chip

@@ -72,7 +72,7 @@ const VideoCard = ({ video, channelContext }) => {
   return (
     // w-full so it fills whatever grid column it's placed in
     <div
-      className="flex flex-col w-full cursor-pointer group"
+      className="flex flex-col w-full cursor-pointer group rounded-2xl p-2 transition-colors duration-150 hover:bg-[#f8f8f8]"
       style={{ fontFamily: "'Roboto','Arial',sans-serif" }}
       onClick={handleClick}
     >
@@ -106,7 +106,7 @@ const VideoCard = ({ video, channelContext }) => {
       </div>
 
       {/* ── METADATA ROW — avatar | text | ⋮ ── */}
-      <div className="flex flex-row items-start pt-2 gap-3 w-full relative">
+      <div className="flex flex-row items-start pt-3 gap-3 w-full relative">
 
         {/* Channel Avatar — 36×36, fixed, never shrinks */}
         <div
@@ -122,7 +122,7 @@ const VideoCard = ({ video, channelContext }) => {
         </div>
 
         {/* Text container — pr-6 keeps gap before ⋮ button */}
-        <div className="flex flex-col gap-[2px] flex-1 min-w-0 pr-6">
+        <div className="flex flex-col gap-[3px] flex-1 min-w-0 pr-6">
 
           {/* Title — YT grid uses 14px/20px, weight 500, 2-line clamp */}
           <h3

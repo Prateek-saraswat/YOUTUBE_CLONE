@@ -1,58 +1,120 @@
-# YouTube Clone - MERN Stack
+# YouTube Clone (MERN Stack)
 
-A full-stack YouTube clone built with MongoDB, Express, React, Node.js, Vite, Axios, and JWT authentication.
+A full-stack YouTube clone built with MongoDB, Express.js, React, Node.js, Vite, Axios, and JWT authentication. The application supports user authentication, channel creation, video upload and management, category filtering, search, likes/dislikes, and full comment CRUD on the video player page.
 
-## Features
+## Overview
 
-- User registration and login with JWT authentication
-- Header with search bar
-- Toggleable sidebar
-- Home page with video grid
-- Search by video title
-- Category-based video filters
-- Channel creation for logged-in users
-- Channel page with uploaded videos
-- Upload, edit, and delete video flow
-- Video player page
-- Like and dislike functionality
-- Comment CRUD on the video player page
-- MongoDB seed script for test data
+This project was developed as a MERN stack capstone assignment to recreate the core YouTube experience:
+
+- browse videos on a responsive home page
+- search videos by title
+- filter videos by category
+- register and log in with JWT-based authentication
+- create a personal channel
+- upload, edit, and delete videos from the channel page
+- open a dedicated video player page
+- like or dislike videos
+- add, edit, and delete comments
 
 ## Tech Stack
 
-- Frontend: React, React Router, Axios, Vite, Tailwind CSS, SweetAlert2
-- Backend: Node.js, Express.js, MongoDB, Mongoose
-- Authentication: JWT
+### Frontend
+
+- React
+- React Router
+- Axios
+- Vite
+- Tailwind CSS
+- React Icons
+- SweetAlert2
+
+### Backend
+
+- Node.js
+- Express.js
+- MongoDB
+- Mongoose
+- JSON Web Tokens (JWT)
+- bcryptjs
+
+## Features
+
+### Authentication
+
+- user registration
+- user login
+- JWT-based protected routes
+- persistent login using local storage
+- header updates dynamically after login/logout
+
+### Home Page
+
+- YouTube-style header
+- toggleable sidebar
+- category filter buttons
+- responsive video grid
+- search by video title
+- latest videos fetched from MongoDB
+
+### Channel Page
+
+- create a channel after login
+- show channel banner, avatar, description, subscriber count, and video count
+- upload videos from the channel page
+- edit uploaded videos
+- delete uploaded videos
+
+### Video Player Page
+
+- play selected video
+- show title, description, and channel details
+- like/dislike functionality
+- comment CRUD
+- suggested videos section
+
+### Data Seeding
+
+- sample users
+- sample channels
+- sample videos
+- sample comments
+- sample likes and dislikes
 
 ## Project Structure
 
 ```text
 YOUTUBE_CLONE_PROJECT/
-├─ Backend/
-│  ├─ config/
-│  ├─ controllers/
-│  ├─ middlewares/
-│  ├─ models/
-│  ├─ routes/
-│  ├─ seed.js
-│  └─ server.js
-└─ Frontend/
-   ├─ src/
-   │  ├─ api/
-   │  ├─ components/
-   │  ├─ context/
-   │  └─ pages/
-   └─ vite.config.js
+|-- Backend/
+|   |-- config/
+|   |-- controllers/
+|   |-- middlewares/
+|   |-- models/
+|   |-- routes/
+|   |-- seed.js
+|   |-- server.js
+|   `-- package.json
+|-- Frontend/
+|   |-- src/
+|   |   |-- api/
+|   |   |-- components/
+|   |   |-- context/
+|   |   `-- pages/
+|   |-- package.json
+|   `-- vite.config.js
+`-- README.md
 ```
 
 ## Prerequisites
 
-- Node.js 18+
-- MongoDB Atlas or local MongoDB instance
+Make sure these are installed before running the project:
+
+- Node.js 18 or above
+- npm
+- MongoDB Atlas account or local MongoDB instance
 
 ## Environment Variables
 
-Create a `.env` file inside `Backend/` with:
+Create a `.env` file inside the `Backend` folder.
 
 ```env
 MONGO_URI=your_mongodb_connection_string
@@ -77,52 +139,64 @@ cd ..\Frontend
 npm install
 ```
 
-## Run the Project
+## Running the Project
 
-### Start backend
+### Start the backend server
+
+Run this from the `Backend` folder:
 
 ```powershell
-cd Backend
 node server.js
 ```
 
-Backend runs on `http://localhost:3000`.
+Backend runs on:
 
-### Start frontend
+```text
+http://localhost:3000
+```
+
+### Start the frontend server
+
+Run this from the `Frontend` folder:
 
 ```powershell
-cd Frontend
 npm run dev
 ```
 
-Frontend runs on the Vite local URL shown in the terminal, usually `http://localhost:5173`.
+Frontend usually runs on:
 
-## Seed the Database
+```text
+http://localhost:5173
+```
 
-Run this from the `Backend` folder:
+## Seeding the Database
+
+To populate the database with demo data, run the seeder from the `Backend` folder:
 
 ```powershell
 node seed.js
 ```
 
-This will:
+The seeder will:
 
-- clear existing users, channels, videos, and comments
-- insert sample users
-- insert sample channels
-- insert sample videos
-- insert sample comments
-- attach sample likes/dislikes
+- remove existing users, channels, videos, and comments
+- add sample users
+- add sample channels
+- add sample videos
+- add sample comments
+- add sample likes/dislikes
 
-### Seeded Login Credentials
+### Demo Credentials
+
+Use any of these test accounts after seeding:
 
 - `john@example.com / password123`
 - `jane@example.com / password123`
 - `tech@example.com / password123`
 
-## Available Frontend Scripts
+## Frontend Scripts
 
-Run these from `Frontend/`:
+Run these from the `Frontend` folder:
 
 ```powershell
 npm run dev
@@ -131,59 +205,63 @@ npm run preview
 npm run lint
 ```
 
-## Backend API Overview
+## API Overview
 
-### Auth
+Base backend URL:
 
-- `POST /api/auth/register`
-- `POST /api/auth/login`
+```text
+http://localhost:3000/api
+```
 
-### Channels
+### Auth Routes
 
-- `POST /api/channels`
-- `GET /api/channels/:id`
-- `PUT /api/channels/:id`
-- `DELETE /api/channels/:id`
+- `POST /auth/register`
+- `POST /auth/login`
 
-### Videos
+### Channel Routes
 
-- `POST /api/videos`
-- `GET /api/videos`
-- `GET /api/videos/:id`
-- `PUT /api/videos/:id`
-- `DELETE /api/videos/:id`
-- `PUT /api/videos/:id/like`
-- `PUT /api/videos/:id/dislike`
+- `POST /channels`
+- `GET /channels/:id`
+- `PUT /channels/:id`
+- `DELETE /channels/:id`
 
-### Comments
+### Video Routes
 
-- `POST /api/comments/:videoId`
-- `GET /api/comments/:videoId`
-- `PUT /api/comments/:id`
-- `DELETE /api/comments/:id`
+- `POST /videos`
+- `GET /videos`
+- `GET /videos/:id`
+- `PUT /videos/:id`
+- `DELETE /videos/:id`
+- `PUT /videos/:id/like`
+- `PUT /videos/:id/dislike`
 
-## Main User Flows
+### Comment Routes
 
-### Authentication
+- `POST /comments/:videoId`
+- `GET /comments/:videoId`
+- `PUT /comments/:id`
+- `DELETE /comments/:id`
 
-Users can register, log in, and stay authenticated using JWT stored in local storage.
+## Main User Flow
 
-### Home Page
+1. Register a new account.
+2. Log in using email and password.
+3. Create a channel.
+4. Upload a video.
+5. View the uploaded video on the home page.
+6. Search and filter videos by category.
+7. Open a video player page.
+8. Like or dislike the video.
+9. Add, edit, or delete comments.
+10. Edit or delete uploaded videos from the channel page.
 
-Users can browse videos, search by title, and filter by category.
+## Validation and Behavior
 
-### Channel Page
+- only authenticated users can create a channel
+- only channel owners can upload, edit, or delete their own videos
+- only authenticated users can like/dislike videos
+- only authenticated users can add comments
+- only comment owners can edit or delete their comments
 
-Logged-in users can create one channel, upload videos, edit videos, and delete videos from their channel page.
-
-### Video Player Page
-
-Users can watch videos, like/dislike videos, and add, edit, or delete comments.
-
-## Notes
-
-- This project uses ES Modules.
-- The frontend is built with Vite, not CRA.
-- The backend currently uses `node server.js` directly; no separate dev script is configured.
 
 

@@ -1,40 +1,185 @@
 // src/pages/VideoPlayer.jsx
-
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import API from "../api/api.js";
 import CommentSection from "../components/CommentSection.jsx";
-import {
-  AiOutlineLike,
-  AiFillLike,
-  AiOutlineDislike,
-  AiFillDislike,
-} from "react-icons/ai";
 import { useAuth } from "../context/authContext.jsx";
-import { FiShare2 } from "react-icons/fi";
-import { MdDownload } from "react-icons/md";
+import {
+  AiOutlineLike, AiFillLike,
+  AiOutlineDislike, AiFillDislike,
+} from "react-icons/ai";
+import { FiShare2, FiScissors } from "react-icons/fi";
+import { MdDownload, MdOutlinePlaylistAdd } from "react-icons/md";
+import { HiDotsHorizontal } from "react-icons/hi";
 
-const formatViews = (views) => {
-  if (views >= 1000000) return (views / 1000000).toFixed(1) + "M";
-  if (views >= 1000) return (views / 1000).toFixed(1) + "K";
-  return views?.toString() || "0";
+// ── Helpers ────────────────────────────────────────────────────────────────
+
+const formatViews = (v) => {
+  if (!v) return "0";
+  if (v >= 1_000_000) return (v / 1_000_000).toFixed(1).replace(".0", "") + "M";
+  if (v >= 1_000)     return (v / 1_000).toFixed(1).replace(".0", "") + "K";
+  return v.toString();
 };
 
+const formatFullViews = (v) =>
+  v ? Number(v).toLocaleString() : "0";
+
+const formatTimeAgo = (dateStr) => {
+  const diffMs = Date.now() - new Date(dateStr);
+  const days   = Math.floor(diffMs / 86_400_000);
+  if (days < 1)   return "Today";
+  if (days < 7)   return `${days} day${days > 1 ? "s" : ""} ago`;
+  if (days < 30)  { const w = Math.floor(days/7);  return `${w} week${w>1?"s":""} ago`;  }
+  if (days < 365) { const m = Math.floor(days/30); return `${m} month${m>1?"s":""} ago`; }
+  const y = Math.floor(days/365); return `${y} year${y>1?"s":""} ago`;
+};
+
+const formatSubs = (n) => {
+  if (!n) return "0";
+  if (n >= 1_000_000) return (n / 1_000_000).toFixed(2).replace(/\.?0+$/, "") + "M";
+  if (n >= 1_000)     return (n / 1_000).toFixed(1).replace(".0", "") + "K";
+  return n.toString();
+};
+
+// ── Sub-components ─────────────────────────────────────────────────────────
+
+/** Joined Like / Dislike pill — exact YouTube design */
+const LikeDislikePill = ({
+  likes, dislikes, userLiked, userDisliked, loading, onLike, onDislike,
+}) => (
+  <div
+    className="flex items-center rounded-full overflow-hidden select-none"
+    style={{ background: "#f2f2f2", height: "36px" }}
+  >
+    {/* Like */}
+    <button
+      onClick={onLike}
+      disabled={loading}
+      className="flex items-center gap-[6px] px-4 h-full font-medium text-sm hover:bg-[#e5e5e5] transition-colors disabled:opacity-50"
+      style={{
+        fontFamily: "'Roboto','Arial',sans-serif",
+        fontWeight: 500,
+        fontSize: "14px",
+        color: "#0f0f0f",
+        background: userLiked ? "#e5e5e5" : "transparent",
+        border: "none",
+        cursor: "pointer",
+      }}
+    >
+      {userLiked
+        ? <AiFillLike size={18} />
+        : <AiOutlineLike size={18} />}
+      <span>{formatViews(likes)}</span>
+    </button>
+
+    {/* Divider */}
+    <div style={{ width: "1px", height: "60%", background: "#ccc" }} />
+
+    {/* Dislike */}
+    <button
+      onClick={onDislike}
+      disabled={loading}
+      className="flex items-center gap-[6px] px-4 h-full font-medium text-sm hover:bg-[#e5e5e5] transition-colors disabled:opacity-50"
+      style={{
+        fontFamily: "'Roboto','Arial',sans-serif",
+        fontWeight: 500,
+        fontSize: "14px",
+        color: "#0f0f0f",
+        background: userDisliked ? "#e5e5e5" : "transparent",
+        border: "none",
+        cursor: "pointer",
+      }}
+    >
+      {userDisliked
+        ? <AiFillDislike size={18} />
+        : <AiOutlineDislike size={18} />}
+    </button>
+  </div>
+);
+
+/** Gray action pill — Share / Download / Clip / Save */
+const ActionPill = ({ icon, label, onClick }) => (
+  <button
+    onClick={onClick}
+    className="flex items-center gap-[6px] px-4 rounded-full h-9 font-medium text-sm transition-colors"
+    style={{
+      background: "#f2f2f2",
+      border: "none",
+      cursor: "pointer",
+      fontFamily: "'Roboto','Arial',sans-serif",
+      fontWeight: 500,
+      fontSize: "14px",
+      color: "#0f0f0f",
+      height: "36px",
+      whiteSpace: "nowrap",
+    }}
+    onMouseEnter={(e) => (e.currentTarget.style.background = "#e5e5e5")}
+    onMouseLeave={(e) => (e.currentTarget.style.background = "#f2f2f2")}
+  >
+    {icon}
+    <span className="hidden sm:inline">{label}</span>
+  </button>
+);
+
+/** Sidebar suggestion card */
+const SuggestionCard = ({ video, onClick }) => (
+  <div
+    onClick={onClick}
+    className="flex gap-2 cursor-pointer rounded-xl transition-colors"
+    style={{ padding: "4px", fontFamily: "'Roboto','Arial',sans-serif" }}
+    onMouseEnter={(e) => (e.currentTarget.style.background = "#f2f2f2")}
+    onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
+  >
+    {/* Thumbnail */}
+    <div
+      className="flex-none rounded-xl overflow-hidden bg-[#e5e5e5]"
+      style={{ width: "168px", aspectRatio: "16/9" }}
+    >
+      <img
+        src={video.thumbnailUrl}
+        alt={video.title}
+        className="w-full h-full object-cover"
+        onError={(e) => {
+          e.target.src = "https://placehold.co/640x360/272727/aaa?text=No+Thumbnail";
+        }}
+      />
+    </div>
+
+    {/* Meta */}
+    <div className="flex-1 min-w-0 pt-0.5 pr-1">
+      <p
+        className="line-clamp-2 mb-1"
+        style={{ fontWeight: 500, fontSize: "14px", lineHeight: "20px", color: "#0f0f0f" }}
+      >
+        {video.title}
+      </p>
+      <p style={{ fontSize: "12px", color: "#606060", lineHeight: "18px" }} className="truncate">
+        {video.channel?.channelName || "Unknown"}
+      </p>
+      <p style={{ fontSize: "12px", color: "#606060", lineHeight: "18px" }}>
+        {formatViews(video.views)} views • {formatTimeAgo(video.createdAt)}
+      </p>
+    </div>
+  </div>
+);
+
+// ── Main page ──────────────────────────────────────────────────────────────
+
 const VideoPlayer = () => {
-  const { id } = useParams();
-  const navigate = useNavigate();
-  const { auth } = useAuth();
+  const { id }    = useParams();
+  const navigate  = useNavigate();
+  const { auth }  = useAuth();
 
-  const [video, setVideo] = useState(null);
-  const [suggestions, setSuggestions] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [likes, setLikes] = useState(0);
-  const [dislikes, setDislikes] = useState(0);
-  const [userLiked, setUserLiked] = useState(false);
+  const [video,        setVideo]        = useState(null);
+  const [suggestions,  setSuggestions]  = useState([]);
+  const [loading,      setLoading]      = useState(true);
+  const [likes,        setLikes]        = useState(0);
+  const [dislikes,     setDislikes]     = useState(0);
+  const [userLiked,    setUserLiked]    = useState(false);
   const [userDisliked, setUserDisliked] = useState(false);
-  const [likeLoading, setLikeLoading] = useState(false);
-
-  const [expanded, setExpanded] = useState(false);
+  const [likeLoading,  setLikeLoading]  = useState(false);
+  const [expanded,     setExpanded]     = useState(false);
+  const [subscribed,   setSubscribed]   = useState(false);
 
   useEffect(() => {
     const fetchVideo = async () => {
@@ -44,7 +189,6 @@ const VideoPlayer = () => {
         setVideo(data);
         setLikes(data.likes?.length || 0);
         setDislikes(data.dislikes?.length || 0);
-
         if (auth) {
           setUserLiked(data.likes?.includes(auth.user.id));
           setUserDisliked(data.dislikes?.includes(auth.user.id));
@@ -59,29 +203,19 @@ const VideoPlayer = () => {
     const fetchSuggestions = async () => {
       try {
         const { data } = await API.get("/videos");
-
-        // console.log("Suggestions response:", data);
-
-        const videosArray = Array.isArray(data) ? data : [];
-
-        const filtered = videosArray.filter((v) => v._id !== id).slice(0, 8);
-
-        setSuggestions(filtered);
+        const arr = Array.isArray(data) ? data : [];
+        setSuggestions(arr.filter((v) => v._id !== id).slice(0, 15));
       } catch (err) {
         console.error("Failed to fetch suggestions:", err);
       }
     };
 
-    if (id) {
-      fetchVideo();
-      fetchSuggestions();
-    }
+    if (id) { fetchVideo(); fetchSuggestions(); }
   }, [id, auth]);
 
   const handleLike = async () => {
     if (!auth) return navigate("/login");
-    if (likeLoading) return; // prevent multiple clicks
-
+    if (likeLoading) return;
     try {
       setLikeLoading(true);
       const { data } = await API.put(`/videos/${id}/like`);
@@ -113,179 +247,256 @@ const VideoPlayer = () => {
     }
   };
 
+  // ── Loading ──
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-[200px]">
-        <div className="w-10 h-10 border-4 border-gray-700 border-t-red-600 rounded-full animate-spin"></div>
+      <div className="flex items-center justify-center min-h-[60vh]">
+        <div className="w-10 h-10 border-4 border-gray-200 border-t-red-600 rounded-full animate-spin" />
       </div>
     );
   }
 
   if (!video) {
     return (
-      <div className="text-center py-20 text-gray-400">Video not found</div>
+      <div className="flex flex-col items-center justify-center min-h-[60vh] gap-3">
+        <p style={{ fontSize: "16px", color: "#0f0f0f", fontFamily: "'Roboto','Arial',sans-serif" }}>
+          Video not found
+        </p>
+      </div>
     );
   }
-  const description = video.description || "No description available.";
+
+  const description   = video.description || "No description available.";
+  const isYouTube     = video.videoUrl?.includes("youtube.com") || video.videoUrl?.includes("youtu.be");
+  const descPreview   = description.slice(0, 150);
+  const hasMoreDesc   = description.length > 150;
 
   return (
-    <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-[1fr_350px] gap-6 px-4 py-4">
-      {/* Left Section */}
-      <div>
-        {/* Video */}
-        <div className="aspect-video bg-black rounded-lg overflow-hidden flex items-center justify-center">
-          {video.videoUrl?.includes("youtube.com") ||
-          video.videoUrl?.includes("youtu.be") ? (
-            <iframe
-              src={video.videoUrl}
-              title={video.title}
-              allowFullScreen
-              className="w-full h-full"
-            ></iframe>
-          ) : (
-            <video
-              src={video.videoUrl}
-              title={video.title}
-              controls
-              autoPlay
-              className="w-full h-full object-contain bg-black"
-            >
-              Your browser does not support the video tag.
-            </video>
-          )}
-        </div>
+    <div
+      className="mx-auto px-3 sm:px-4 py-4"
+      style={{
+        maxWidth: "1600px",
+        fontFamily: "'Roboto','Arial',sans-serif",
+        display: "grid",
+        gridTemplateColumns: "minmax(0,1fr)",
+        gap: "24px",
+      }}
+    >
+      {/* ── TWO-COLUMN GRID on xl ── */}
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "minmax(0,1fr)",
+          gap: "24px",
+        }}
+        className="xl:!grid-cols-[minmax(0,1fr)_402px]"
+      >
 
-        {/* Title */}
-        <h1 className="text-xl font-semibold text-black mt-4">{video.title}</h1>
+        {/* ════════════════════════════════════════
+            LEFT COLUMN
+        ════════════════════════════════════════ */}
+        <div className="min-w-0 flex flex-col gap-4">
 
-        {/* Channel + Like */}
-        <div className="flex justify-between items-center mt-4 border-b border-gray-700 pb-4 flex-wrap gap-3">
-          {/* Channel */}
-          <div className="flex items-center justify-between mt-4">
-            {/* Left Side - Channel Info */}
-            <div className="flex items-center gap-3">
+          {/* Video player */}
+          <div
+            className="w-full overflow-hidden"
+            style={{ aspectRatio: "16/9", background: "#000", borderRadius: "12px" }}
+          >
+            {isYouTube ? (
+              <iframe
+                src={video.videoUrl}
+                title={video.title}
+                allowFullScreen
+                className="w-full h-full"
+                style={{ border: "none" }}
+              />
+            ) : (
+              <video
+                src={video.videoUrl}
+                controls
+                autoPlay
+                className="w-full h-full"
+                style={{ objectFit: "contain", background: "#000" }}
+              >
+                Your browser does not support the video tag.
+              </video>
+            )}
+          </div>
+
+          {/* Title */}
+          <h1
+            style={{
+              fontSize: "20px",
+              fontWeight: 600,
+              lineHeight: "28px",
+              color: "#0f0f0f",
+              margin: 0,
+            }}
+          >
+            {video.title}
+          </h1>
+
+          {/* Channel row + actions */}
+          <div className="flex flex-wrap items-center justify-between gap-3">
+
+            {/* Left: avatar + name + subs + subscribe */}
+            <div className="flex items-center gap-3 flex-wrap">
               <img
                 src={
                   video.uploader?.avatar ||
-                  `https://ui-avatars.com/api/?name=${video.channel?.channelName}`
+                  `https://ui-avatars.com/api/?name=${video.channel?.channelName || "C"}&background=606060&color=fff&size=64`
                 }
-                className="w-10 h-10 rounded-full object-cover cursor-pointer"
+                alt="channel"
                 onClick={() => navigate(`/channel/${video.channel?._id}`)}
-                alt="channel avatar"
+                style={{ width: "40px", height: "40px", borderRadius: "50%", objectFit: "cover", cursor: "pointer", flexShrink: 0 }}
               />
 
-              <div>
-                <div
-                  className="text-black font-medium cursor-pointer"
-                  onClick={() => navigate(`/channel/${video.channel?._id}`)}
-                >
-                  {video.channel?.channelName}
-                </div>
-                <div className="text-sm text-gray-700">
-                  {video.channel?.subscribers || 0} subscribers
-                </div>
+              <div
+                onClick={() => navigate(`/channel/${video.channel?._id}`)}
+                className="cursor-pointer"
+              >
+                <p style={{ fontWeight: 600, fontSize: "15px", color: "#0f0f0f", lineHeight: "22px" }}>
+                  {video.channel?.channelName || "Unknown Channel"}
+                </p>
+                <p style={{ fontSize: "12px", color: "#606060", lineHeight: "18px" }}>
+                  {formatSubs(video.channel?.subscribers)} subscribers
+                </p>
               </div>
+
+              {/* Subscribe */}
+              <button
+                onClick={() => setSubscribed((p) => !p)}
+                style={{
+                  background: subscribed ? "#f2f2f2" : "#0f0f0f",
+                  color: subscribed ? "#0f0f0f" : "#fff",
+                  border: "none",
+                  borderRadius: "20px",
+                  padding: "0 16px",
+                  height: "36px",
+                  fontFamily: "'Roboto','Arial',sans-serif",
+                  fontWeight: 500,
+                  fontSize: "14px",
+                  cursor: "pointer",
+                  transition: "background 0.15s",
+                  whiteSpace: "nowrap",
+                }}
+              >
+                {subscribed ? "Subscribed" : "Subscribe"}
+              </button>
             </div>
 
-            {/* Right Side - Dummy Subscribe Button */}
-            <button
-              className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 ml-4.5 
-                                 rounded-full text-sm font-medium transition"
-            >
-              Subscribe
-            </button>
-          </div>
+            {/* Right: Like / Dislike / Share / Download / More */}
+            <div className="flex items-center gap-2 flex-wrap">
+              <LikeDislikePill
+                likes={likes}
+                dislikes={dislikes}
+                userLiked={userLiked}
+                userDisliked={userDisliked}
+                loading={likeLoading}
+                onLike={handleLike}
+                onDislike={handleDislike}
+              />
 
-          {/* Like / Dislike */}
-          <div className="flex gap-2">
-            <button
-              onClick={handleLike}
-              disabled={likeLoading}
-              className={`flex items-center gap-1 px-4 py-2 rounded-full text-sm ${
-                userLiked
-                  ? "bg-white text-black"
-                  : "bg-gray-800 text-white hover:bg-gray-700"
-              } ${likeLoading ? "opacity-50 cursor-not-allowed" : ""}`}
-            >
-              {userLiked ? <AiFillLike /> : <AiOutlineLike />}
-              {likes}
-            </button>
+              <ActionPill icon={<FiShare2 size={16} />} label="Share" />
+              <ActionPill icon={<MdDownload size={18} />} label="Download" />
+              <ActionPill icon={<MdOutlinePlaylistAdd size={18} />} label="Save" />
 
-            <button
-              onClick={handleDislike}
-              disabled={likeLoading}
-              className={`flex items-center gap-1 px-4 py-2 rounded-full text-sm ${
-                userDisliked
-                  ? "bg-white text-black"
-                  : "bg-gray-800 text-white hover:bg-gray-700"
-              } ${likeLoading ? "opacity-50 cursor-not-allowed" : ""}`}
-            >
-              {userDisliked ? <AiFillDislike /> : <AiOutlineDislike />}
-              {dislikes}
-            </button>
-
-        <button className="flex items-center gap-2 px-4 py-2 bg-gray-800 rounded-full">
-          <FiShare2 /> 
-        </button>
-
-        <button className="flex items-center gap-2 px-4 py-2 bg-gray-800 rounded-full">
-          <MdDownload /> 
-        </button>
-          </div>
-        </div>
-
-        {/* Description */}
-
-        <div className="mt-4 bg-white p-4 rounded-lg">
-          <div className="text-sm font-medium text-black mb-2">
-            {formatViews(video.views)} views •{" "}
-            {new Date(video.createdAt).toLocaleDateString()}
-          </div>
-          <p className="text-sm text-gray-950 whitespace-pre-wrap bg-gray-200 p-2.5 rounded-2xl">
-            {expanded ? description : description.slice(0, 120)}
-
-            {description.length > 120 && (
+              {/* More (⋯) */}
               <button
-                onClick={() => setExpanded(!expanded)}
-                className="ml-2 text-blue-400 hover:underline"
+                style={{
+                  width: "36px", height: "36px",
+                  background: "#f2f2f2",
+                  border: "none",
+                  borderRadius: "50%",
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  cursor: "pointer",
+                  color: "#0f0f0f",
+                  flexShrink: 0,
+                }}
+                onMouseEnter={(e) => (e.currentTarget.style.background = "#e5e5e5")}
+                onMouseLeave={(e) => (e.currentTarget.style.background = "#f2f2f2")}
+              >
+                <HiDotsHorizontal size={18} />
+              </button>
+            </div>
+          </div>
+
+          {/* ── Description box ── */}
+          <div
+            style={{
+              background: "#f2f2f2",
+              borderRadius: "12px",
+              padding: "12px 16px",
+              cursor: hasMoreDesc && !expanded ? "pointer" : "default",
+            }}
+            onClick={() => { if (!expanded && hasMoreDesc) setExpanded(true); }}
+          >
+            {/* Views + date + time ago */}
+            <div className="flex flex-wrap gap-x-2 mb-2">
+              <span style={{ fontWeight: 500, fontSize: "14px", color: "#0f0f0f" }}>
+                {formatFullViews(video.views)} views
+              </span>
+              <span style={{ fontWeight: 500, fontSize: "14px", color: "#0f0f0f" }}>
+                {new Date(video.createdAt).toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" })}
+              </span>
+              <span style={{ fontSize: "14px", color: "#0f0f0f" }}>
+                {formatTimeAgo(video.createdAt)}
+              </span>
+            </div>
+
+            {/* Description text */}
+            <p
+              style={{
+                fontSize: "14px",
+                lineHeight: "20px",
+                color: "#0f0f0f",
+                whiteSpace: "pre-wrap",
+                margin: 0,
+              }}
+            >
+              {expanded ? description : descPreview}
+              {!expanded && hasMoreDesc && "..."}
+            </p>
+
+            {/* Toggle */}
+            {hasMoreDesc && (
+              <button
+                onClick={(e) => { e.stopPropagation(); setExpanded((p) => !p); }}
+                style={{
+                  background: "none",
+                  border: "none",
+                  padding: 0,
+                  marginTop: "8px",
+                  fontFamily: "'Roboto','Arial',sans-serif",
+                  fontWeight: 500,
+                  fontSize: "14px",
+                  color: "#0f0f0f",
+                  cursor: "pointer",
+                  display: "block",
+                }}
               >
                 {expanded ? "Show less" : "Show more"}
               </button>
             )}
-          </p>
+          </div>
+
+          {/* ── Comments ── */}
+          <CommentSection videoId={id} />
         </div>
 
-        {/* Comments */}
-        <CommentSection videoId={id} />
-      </div>
+        {/* ════════════════════════════════════════
+            RIGHT COLUMN — Suggestions
+        ════════════════════════════════════════ */}
+        <div className="flex flex-col gap-2">
+          {suggestions.map((s) => (
+            <SuggestionCard
+              key={s._id}
+              video={s}
+              onClick={() => navigate(`/video/${s._id}`)}
+            />
+          ))}
+        </div>
 
-      {/* Right Section - Suggestions */}
-      <div className="flex flex-col gap-3">
-        {suggestions.map((s) => (
-          <div
-            key={s._id}
-            onClick={() => navigate(`/video/${s._id}`)}
-            className="flex gap-2 cursor-pointer hover:bg-gray-100 p-2 rounded-md"
-          >
-            <div className="w-40 aspect-video bg-white text-black rounded-md overflow-hidden">
-              <img
-                src={s.thumbnailUrl}
-                className="w-full h-full object-cover"
-              />
-            </div>
-            <div>
-              <div className="text-sm font-medium text-black line-clamp-2">
-                {s.title}
-              </div>
-              <div className="text-xs text-gray-700">
-                {s.channel?.channelName}
-              </div>
-              <div className="text-xs text-gray-700">
-                {formatViews(s.views)} views
-              </div>
-            </div>
-          </div>
-        ))}
       </div>
     </div>
   );
