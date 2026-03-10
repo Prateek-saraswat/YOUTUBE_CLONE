@@ -122,46 +122,99 @@ const ActionPill = ({ icon, label, onClick }) => (
 );
 
 /** Sidebar suggestion card */
-const SuggestionCard = ({ video, onClick }) => (
-  <div
-    onClick={onClick}
-    className="flex gap-2 cursor-pointer rounded-xl transition-colors"
-    style={{ padding: "4px", fontFamily: "'Roboto','Arial',sans-serif" }}
-    onMouseEnter={(e) => (e.currentTarget.style.background = "#f2f2f2")}
-    onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
-  >
-    {/* Thumbnail */}
-    <div
-      className="flex-none rounded-xl overflow-hidden bg-[#e5e5e5]"
-      style={{ width: "168px", aspectRatio: "16/9" }}
-    >
-      <img
-        src={video.thumbnailUrl}
-        alt={video.title}
-        className="w-full h-full object-cover"
-        onError={(e) => {
-          e.target.src = "https://placehold.co/640x360/272727/aaa?text=No+Thumbnail";
-        }}
-      />
-    </div>
+// const SuggestionCard = ({ video, onClick }) => (
+//   <div
+//     onClick={onClick}
+//     className="flex gap-2 cursor-pointer rounded-xl transition-colors"
+//     style={{ padding: "4px", fontFamily: "'Roboto','Arial',sans-serif" }}
+//     onMouseEnter={(e) => (e.currentTarget.style.background = "#f2f2f2")}
+//     onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
+//   >
+//     {/* Thumbnail */}
+//     <div
+//       className="flex-none rounded-xl overflow-hidden bg-[#e5e5e5]"
+//       style={{ width: "168px", aspectRatio: "16/9" }}
+//     >
+//       <img
+//         src={video.thumbnailUrl}
+//         alt={video.title}
+//         className="w-full h-full object-cover"
+//         onError={(e) => {
+//           e.target.src = "https://placehold.co/640x360/272727/aaa?text=No+Thumbnail";
+//         }}
+//       />
+//     </div>
 
-    {/* Meta */}
-    <div className="flex-1 min-w-0 pt-0.5 pr-1">
-      <p
-        className="line-clamp-2 mb-1"
-        style={{ fontWeight: 500, fontSize: "14px", lineHeight: "20px", color: "#0f0f0f" }}
-      >
-        {video.title}
-      </p>
-      <p style={{ fontSize: "12px", color: "#606060", lineHeight: "18px" }} className="truncate">
-        {video.channel?.channelName || "Unknown"}
-      </p>
-      <p style={{ fontSize: "12px", color: "#606060", lineHeight: "18px" }}>
-        {formatViews(video.views)} views • {formatTimeAgo(video.createdAt)}
-      </p>
+//     {/* Meta */}
+//     <div className="flex-1 min-w-0 pt-0.5 pr-1">
+//       <p
+//         className="line-clamp-2 mb-1"
+//         style={{ fontWeight: 500, fontSize: "14px", lineHeight: "20px", color: "#0f0f0f" }}
+//       >
+//         {video.title}
+//       </p>
+//       <p style={{ fontSize: "12px", color: "#606060", lineHeight: "18px" }} className="truncate">
+//         {video.channel?.channelName || "Unknown"}
+//       </p>
+//       <p style={{ fontSize: "12px", color: "#606060", lineHeight: "18px" }}>
+//         {formatViews(video.views)} views • {formatTimeAgo(video.createdAt)}
+//       </p>
+//     </div>
+//   </div>
+// );
+const SuggestionCard = ({ video, onClick }) => {
+  const [hovered, setHovered] = useState(false);
+
+  const channelName = video.channel?.channelName || "Unknown";
+  // const duration    = formatDuration(video.duration);
+
+  return (
+    <div
+      onClick={onClick}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      className={`flex gap-2 cursor-pointer rounded-xl p-2 transition-colors duration-150 ${
+        hovered ? "bg-[#f2f2f2]" : "bg-transparent"
+      }`}
+      style={{ fontFamily: "'Roboto','Arial',sans-serif" }}
+    >
+      {/* Thumbnail */}
+      <div className="relative flex-none w-[168px] aspect-video rounded-xl overflow-hidden bg-[#e5e5e5]">
+        <img
+          src={video.thumbnailUrl}
+          alt={video.title}
+          loading="lazy"
+          className="w-full h-full object-cover"
+          onError={(e) => {
+            e.target.src = "https://placehold.co/640x360/272727/aaa?text=No+Thumbnail";
+          }}
+        />
+        
+      </div>
+
+      {/* Meta */}
+      <div className="flex-1 min-w-0 flex flex-col gap-[2px] pt-0.5">
+        {/* Title — 2 lines max */}
+        <p className="text-[14px] font-medium text-[#0f0f0f] leading-5 line-clamp-2">
+          {video.title}
+        </p>
+
+        {/* Channel name */}
+        <p className="text-[12px] text-[#606060] leading-[18px] truncate mt-0.5">
+          {channelName}
+        </p>
+
+        {/* Views • time */}
+        <p className="text-[12px] text-[#606060] leading-[18px]">
+          {formatViews(video.views)} views
+          <span className="mx-1">•</span>
+          {formatTimeAgo(video.createdAt)}
+        </p>
+      </div>
     </div>
-  </div>
-);
+  );
+};
+
 
 // ── Main page ──────────────────────────────────────────────────────────────
 
@@ -487,7 +540,7 @@ const VideoPlayer = () => {
         {/* ════════════════════════════════════════
             RIGHT COLUMN — Suggestions
         ════════════════════════════════════════ */}
-        <div className="flex flex-col gap-2">
+        {/* <div className="flex flex-col gap-2">
           {suggestions.map((s) => (
             <SuggestionCard
               key={s._id}
@@ -495,7 +548,44 @@ const VideoPlayer = () => {
               onClick={() => navigate(`/video/${s._id}`)}
             />
           ))}
-        </div>
+        </div> */}
+        <div className="flex flex-col">
+  {/* Section header */}
+  <div className="flex items-center justify-between mb-3 px-1">
+    <h2 className="text-[16px] font-semibold text-[#0f0f0f]"
+        style={{ fontFamily: "'Roboto','Arial',sans-serif" }}>
+      Up next
+    </h2>
+    {/* Autoplay toggle — cosmetic */}
+    <div className="flex items-center gap-2">
+      <span className="text-[13px] text-[#606060]"
+            style={{ fontFamily: "'Roboto','Arial',sans-serif" }}>
+        Autoplay
+      </span>
+      <div className="w-9 h-5 bg-[#065fd4] rounded-full flex items-center px-[3px] cursor-pointer">
+        <div className="w-3.5 h-3.5 bg-white rounded-full ml-auto" />
+      </div>
+    </div>
+  </div>
+
+  {/* Cards */}
+  <div className="flex flex-col gap-1">
+    {suggestions.length === 0 ? (
+      <p className="text-[14px] text-[#606060] text-center py-8"
+         style={{ fontFamily: "'Roboto','Arial',sans-serif" }}>
+        No suggestions available
+      </p>
+    ) : (
+      suggestions.map((s) => (
+        <SuggestionCard
+          key={s._id}
+          video={s}
+          onClick={() => navigate(`/video/${s._id}`)}
+        />
+      ))
+    )}
+  </div>
+</div>
 
       </div>
     </div>

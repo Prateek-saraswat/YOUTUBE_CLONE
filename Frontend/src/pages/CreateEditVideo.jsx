@@ -388,10 +388,10 @@ const CreateEditVideo = () => {
 
           {/* Tips */}
           <div style={{ padding: "16px", display: "flex", flexDirection: "column", gap: "14px" }}>
-            <TipRow icon="📝" title="Title" body="A good title is clear, specific, and around 60 characters." />
-            <TipRow icon="🖼️" title="Thumbnail" body="Use a 16:9 image (1280×720px) for best quality." />
-            <TipRow icon="🔗" title="Video URL" body="Paste a YouTube embed link or a direct video URL." />
-            <TipRow icon="🏷️" title="Category" body="Choose the category that best describes your content." />
+            <TipRow icon="" title="Title" body="A good title is clear, specific, and around 60 characters." />
+            <TipRow icon="" title="Thumbnail" body="Use a 16:9 image (1280×720px) for best quality." />
+            <TipRow icon="" title="Video URL" body="Paste a YouTube embed link." />
+            <TipRow icon="" title="Category" body="Choose the category that best describes your content." />
 
             <div style={{ borderTop: "1px solid #e5e5e5", paddingTop: "14px" }}>
               <p style={{ margin: 0, lineHeight: "20px" }}>
