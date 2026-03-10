@@ -1,6 +1,11 @@
+
 # YouTube Clone (MERN Stack)
 
 A full-stack YouTube clone built with MongoDB, Express.js, React, Node.js, Vite, Axios, and JWT authentication. The application supports user authentication, channel creation, video upload and management, category filtering, search, likes/dislikes, and full comment CRUD on the video player page.
+
+## VIDEO LINK EXPLANING FEATURES -  https://drive.google.com/file/d/162KhNXe4UoQQ5l0seF-zKOOfSpLSX9Zs/view?usp=drive_link
+
+## GITHUB REPOSITORY LINK - https://github.com/Prateek-saraswat/YOUTUBE_CLONE
 
 ## Overview
 
